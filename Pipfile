@@ -8,7 +8,7 @@ PyJWT = "*"
 pytest = "*"
 
 [dev-packages]
-black = "==18.4a4"
+black = "==18.6b2"
 pycodestyle = "*"
 
 [requires]
