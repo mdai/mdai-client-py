@@ -2,13 +2,33 @@
 
 MD.ai Python client library
 
+## API 
+
+
+
+
 ## Documentation
 
 Coming soon...
 
 ## Development
 
-**Dependencies**
+**Python version management** 
+
+Pyenv is recommended for managing python versions. 
+See tutorial and installation guide [here](https://amaral.northwestern.edu/resources/guides/pyenv-tutorial). 
+
+Current python version to install is 3.6.5. 
+```sh
+  pyenv install 3.6.5
+```
+However, there are several system dependecies that need to be installed first [link](https://github.com/pyenv/pyenv/wiki/common-build-problems). Install these first: 
+
+```sh 
+  sudo apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev 
+  xz-utils tk-dev libffi-dev
+``` 
+**Python dependencies**
 
 [Pipenv](https://docs.pipenv.org)
 
@@ -17,7 +37,6 @@ For initial setup, run:
 ```sh
 # Install virtualenv in local directory
 export PIPENV_VENV_IN_PROJECT=1
-
 pipenv install --dev --three
 ```
 
