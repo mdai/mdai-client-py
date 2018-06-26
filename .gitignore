@@ -3,3 +3,5 @@
 .cache/
 __pycache__/
 .python-version
+.ipynb_checkpoints/
+scratchpad-*.ipynb
