@@ -70,7 +70,6 @@ class Project(object):
         print("Dataset contains %d annotations." % len(self.annotations))
         return self.annotations
 
-
     def show_labels(self): 
         if self.label_group_id == -1: 
             print('Need to specify Label Group Id with set_label_group()')
