@@ -5,8 +5,21 @@ import warnings
 import json 
 
 import pandas as pd 
-
 import pydicom 
+
+import logging
+
+#from logging.config import fileConfig
+#log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logger.config')
+#fileConfig(log_file_path)
+
+_LOGGER = logging.getLogger(__name__)
+
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+handler.setFormatter(formatter)
+_LOGGER.addHandler(handler)
+_LOGGER.setLevel(logging.DEBUG)
 
 class Project(object): 
     label_group_id = -1 
@@ -22,20 +35,22 @@ class Project(object):
                 self.data = json.load(f)
         self.annotations = self.data['datasets'][0]['annotations']
 
-    def _is_valid_label_group(self, label_group_id): 
-        all_label_groups = len(self.data['labelGroups'])
-        if label_group_id >= 0 and label_group_id < all_label_groups:  
+    def _is_valid_label_group(self, label_group_id):
+        """Check to see if label group id is valid. 
+        """
+        num_label_groups = len(self.data['labelGroups'])
+        if label_group_id >= 0 and label_group_id < num_label_groups:  
             return True
         else: 
             return False
 
     def set_label_group(self, label_group_id):
         if self._is_valid_label_group(label_group_id): 
-            print('Setting label group to %s, id %d' % (self.data['labelGroups'][label_group_id]['name'], label_group_id))
+            _LOGGER.info('Setting label group to %s, id %d' % (self.data['labelGroups'][label_group_id]['name'], label_group_id))
             self.label_group_id = label_group_id
             return True 
         else: 
-            print('Label Group id %d is invalid' % (label_group_id))
+            _LOGGER.error('Label Group id %d is invalid' % (label_group_id))
             return False 
 
     def show_label_groups(self): 
@@ -46,7 +61,7 @@ class Project(object):
     def get_labels(self, label_group_id=-1): 
 
         if label_group_id == -1 and self.label_group_id != -1: 
-            print('Getting labels for Label Group id: ', self.label_group_id)
+            print('Getting labels for Label Group id: %d' % self.label_group_id)
             self.labels = self.data['labelGroups'][self.label_group_id]['labels']
             return self.labels
 
@@ -62,7 +77,7 @@ class Project(object):
                 self.labels = self.data['labelGroups'][label_group_id]['labels']
                 return self.labels
             else: 
-                print('Invalid label group id')
+                _LOGGER.error('Invalid label group id')
                 self.show_label_groups() 
                 return None 
 
@@ -100,24 +115,37 @@ class Project(object):
         print("Filtered Dataset contains %d annotations." % len(annotations_filtered))
         return annotations_filtered
 
-    def get_image_filepaths(self, annotations_filtered): 
+    def _generate_filepath(self, a):
+        """Generate an unique file path identifier
+        """ 
+        fp = None
+        try: 
+            fp = os.path.join(self.PROJECT_IMAGES_FP, a['StudyInstanceUID'], a['SeriesInstanceUID'], a['SOPInstanceUID']) + '.dcm'
+        except Exception as error: 
+            print('Exception:', error)
+            print('a %s'% a)
+        return fp  
+
+    def get_image_filepaths(self, annotations_filtered):
+        """Return 
+        """
         image_fps = set()
-
         for a in annotations_filtered:
-            try: 
-                fp = os.path.join(self.PROJECT_IMAGES_FP, a['StudyInstanceUID'], a['SeriesInstanceUID'], a['SOPInstanceUID']) + '.dcm'
-            except Exception as error: 
-                print('Exception:', error)
-                print('a %s'% a)
-            else: 
+            fp = self._generate_filepath(a) 
+            if fp: 
                 image_fps.add(fp)
-        return image_fps
+        return list(image_fps)
 
-    def get_local_image_annotations(self, image_fps, local_label_ids, annotations_filtered): 
+
+    # Todo: this should be renamed, it really just does association 
+    def associate_images_and_annotations(self, image_fps, local_label_ids, annotations_filtered): 
+        """Associate image annotations with the corresponding image,
+           using a unique file path identifier
+        """
         local_image_annotations = {fp: [] for fp in image_fps}
         for a in annotations_filtered:
             # only add local annotations with data
             if a['labelId'] in local_label_ids and a['data'] is not None:
-                fp = os.path.join(self.PROJECT_IMAGES_FP, a['StudyInstanceUID'], a['SeriesInstanceUID'], a['SOPInstanceUID']) + '.dcm'
+                fp = self._generate_filepath(a)
                 local_image_annotations[fp].append(a)
         return local_image_annotations
