@@ -1,5 +1,7 @@
-class Client:
+import requests 
 
+class Client:
+""" Client for authentication? """ 
     def __init__(self, org=None, access_token=None):
         """ Web API client 
         """

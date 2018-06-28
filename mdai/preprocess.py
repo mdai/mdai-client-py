@@ -4,7 +4,8 @@ import os
 import warnings 
 import json 
 
-import pandas as pd 
+import pandas as pd
+
 import pydicom 
 
 import logging
@@ -20,6 +21,8 @@ formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message
 handler.setFormatter(formatter)
 _LOGGER.addHandler(handler)
 _LOGGER.setLevel(logging.DEBUG)
+
+# TODO: consider switch into using the 
 
 class Project(object): 
     label_group_id = -1 
@@ -114,28 +117,27 @@ class Project(object):
         annotations_filtered = [a for a in self.annotations if a['labelId'] in label_ids]
         print("Filtered Dataset contains %d annotations." % len(annotations_filtered))
         return annotations_filtered
-
-    def _generate_filepath(self, a):
-        """Generate an unique file path identifier
+ 
+    def _generate_id(self, a):
+        """Generate an unique image identifier
         """ 
-        fp = None
+        uid = None
         try: 
-            fp = os.path.join(self.PROJECT_IMAGES_FP, a['StudyInstanceUID'], a['SeriesInstanceUID'], a['SOPInstanceUID']) + '.dcm'
+            uid = os.path.join(self.PROJECT_IMAGES_FP, a['StudyInstanceUID'], a['SeriesInstanceUID'], a['SOPInstanceUID']) + '.dcm'
         except Exception as error: 
             print('Exception:', error)
             print('a %s'% a)
-        return fp  
+        return uid  
 
-    def get_image_filepaths(self, annotations_filtered):
+    def get_image_ids(self, annotations_filtered):
         """Return 
         """
-        image_fps = set()
+        image_ids = set()
         for a in annotations_filtered:
-            fp = self._generate_filepath(a) 
-            if fp: 
-                image_fps.add(fp)
-        return list(image_fps)
-
+            uid = self._generate_id(a) 
+            if uid: 
+                image_ids.add(uid)
+        return list(image_ids)
 
     # Todo: this should be renamed, it really just does association 
     def associate_images_and_annotations(self, image_fps, local_label_ids, annotations_filtered): 
@@ -146,6 +148,6 @@ class Project(object):
         for a in annotations_filtered:
             # only add local annotations with data
             if a['labelId'] in local_label_ids and a['data'] is not None:
-                fp = self._generate_filepath(a)
-                local_image_annotations[fp].append(a)
+                uid = self._generate_id(a)
+                local_image_annotations[uid].append(a)
         return local_image_annotations

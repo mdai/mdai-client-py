@@ -17,7 +17,6 @@ import IPython.display
 
 # TODO: move mdai-api-test.ipynb to mdai-client-py/notebooks directory 
 # TODO: color should be exported in json labels 
-# TODO: rename image_fp to image_id to be more generic 
 
 # TODO: put CONFIG VALUES in config.py 
 ORIG_HEIGHT = 1024
@@ -32,6 +31,7 @@ ORIG_WIDTH  = 1024
 
 # Adapted from https://github.com/matterport/Mask_RCNN/
 
+# TODO: show not sure random color but exported color in json labels 
 def random_colors(N, bright=True):
     """
     Generate random colors.
@@ -45,30 +45,32 @@ def random_colors(N, bright=True):
     return colors
 
 # TODO: figsize should be read from settings 
-def display_images(image_fps, titles=None, cols=3, 
+def display_images(image_ids, titles=None, cols=3, 
                    cmap=None, norm=None, interpolation=None):    
-    titles = titles if titles is not None else [""] * len(image_fps)
-    rows = len(image_fps) // cols + 1
+    titles = titles if titles is not None else [""] * len(image_ids)
+    rows = len(image_ids) // cols + 1
     plt.figure(figsize=(14, 14 * rows // cols))
     i = 1
-    for image_fp, title in zip(image_fps, titles):
+    for image_id, title in zip(image_ids, titles):
         plt.subplot(rows, cols, i)
         plt.title(title, fontsize=9)
         plt.axis('off')
-        ds = pydicom.read_file(image_fp)
+
+        ds = pydicom.read_file(image_id)
         image = ds.pixel_array
         # If grayscale. Convert to RGB for consistency.
         if len(image.shape) != 3 or image.shape[2] != 3:
             image = np.stack((image,) * 3, -1)
         plt.imshow(image.astype(np.uint8), cmap=cmap,
                    norm=norm, interpolation=interpolation)
+        
         i += 1
     plt.show()
 
 
 # TODO: set number of classes 
-def load_image(image_fp):
-    ds = pydicom.read_file(image_fp)
+def load_image(image_id):
+    ds = pydicom.read_file(image_id)
     image = ds.pixel_array
     
     # If grayscale. Convert to RGB for consistency.
@@ -91,8 +93,8 @@ def load_location():
     pass 
 
 # TODO: should be called load_bbox(), for loading bounding box 
-def load_mask(dataset, image_fp, label_ids):
-    annotations = dataset[image_fp]
+def load_mask(dataset, image_id, label_ids):
+    annotations = dataset[image_id]
     count = len(annotations)
     print('Num of annotations: %d' % count)
     
@@ -150,11 +152,11 @@ def extract_bboxes(mask):
 
 # TODO: rename this     
 # get image ground truth from association 
-def get_image_ground_truth(dataset, image_fp, label_ids):
+def get_image_ground_truth(dataset, image_id, label_ids):
     """Load and return ground truth data for an image (image, mask, bounding boxes).
     Input: 
         dataset: 
-        image_fp:         
+        image_id:         
     Returns:
         image: [height, width, 3]
         shape: the original shape of the image before resizing and cropping.
@@ -164,8 +166,8 @@ def get_image_ground_truth(dataset, image_fp, label_ids):
             of the image unless use_mini_mask is True, in which case they are
             defined in MINI_MASK_SHAPE.
     """ 
-    image = load_image(image_fp)
-    mask, class_ids = load_mask(dataset, image_fp, label_ids)
+    image = load_image(image_id)
+    mask, class_ids = load_mask(dataset, image_id, label_ids)
     original_shape = image.shape
     
     # TODO: need to resize image, mask? 
