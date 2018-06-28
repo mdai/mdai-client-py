@@ -12,7 +12,7 @@ from matplotlib import patches,  lines
 from matplotlib.patches import Polygon
 import IPython.display
 
-""" Visualization utility functions 
+""" Visualization utility functions. 
 """
 
 # TODO: move mdai-api-test.ipynb to mdai-client-py/notebooks directory 
@@ -67,9 +67,8 @@ def display_images(image_ids, titles=None, cols=3,
         i += 1
     plt.show()
 
-
-# TODO: set number of classes 
 def load_image(image_id):
+    """ Load DICOM image"""
     ds = pydicom.read_file(image_id)
     image = ds.pixel_array
     
@@ -92,13 +91,19 @@ def load_line():
 def load_location(): 
     pass 
 
-# TODO: should be called load_bbox(), for loading bounding box 
+
+# TODO: masks can be different types 
 def load_mask(dataset, image_id, label_ids):
+    """ Load instance masks for the given image. 
+        
+    """
+
     annotations = dataset[image_id]
     count = len(annotations)
     print('Num of annotations: %d' % count)
     
     if count == 0:
+        print('No annotations')
         mask = np.zeros((ORIG_HEIGHT, ORIG_WIDTH, 1), dtype=np.uint8)
         class_ids = np.zeros((1,), dtype=np.int32)
     else:
@@ -167,7 +172,9 @@ def get_image_ground_truth(dataset, image_id, label_ids):
             defined in MINI_MASK_SHAPE.
     """ 
     image = load_image(image_id)
+
     mask, class_ids = load_mask(dataset, image_id, label_ids)
+    
     original_shape = image.shape
     
     # TODO: need to resize image, mask? 
@@ -184,7 +191,7 @@ def get_image_ground_truth(dataset, image_id, label_ids):
     return image, class_ids, bbox, mask
 
 
-def display_instances(image, boxes, masks, class_ids, class_names,
+def display_annotations(image, boxes, masks, class_ids, class_names,
                       scores=None, title="",
                       figsize=(16, 16), ax=None,
                       show_mask=True, show_bbox=True,
