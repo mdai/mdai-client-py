@@ -44,6 +44,17 @@ def random_colors(N, bright=True):
     random.shuffle(colors)
     return colors
 
+# BUG: this is a hack, should actually read color from label (json) file
+# TODO: remind Leon to put colors inside the labels (json) file 
+def get_colors_for_class_ids(class_ids):
+    colors = []
+    for class_id in class_ids:
+        if class_id == 1:
+            colors.append((.941, .204, .204))
+        elif class_id == 2:
+            colors.append((.973, .58, .024))
+    return colors
+
 # TODO: figsize should be read from settings 
 def display_images(image_ids, titles=None, cols=3, 
                    cmap=None, norm=None, interpolation=None):    
@@ -72,36 +83,26 @@ def load_image(image_id):
     ds = pydicom.read_file(image_id)
     image = ds.pixel_array
     
+    # BUG: why convert to RBG?
     # If grayscale. Convert to RGB for consistency.
     if len(image.shape) != 3 or image.shape[2] != 3:
         image = np.stack((image,) * 3, -1)
     return image 
 
-# TODO: following functions should load different types of label 
-# Free Form, Line, Polygon, Bounding Box and Thresholded Box 
-def load_polygon(dataset, image_id, label_ids): 
-    pass 
-
-def load_freefrom(dataset, image_id, label_ids): 
-    pass 
-
-def load_line(): 
-    pass 
-
-def load_location(): 
-    pass 
-
-
-# TODO: masks can be different types 
+# NOTE: Masks can be different types, mask is a binary true/false map.
+# NOTE: Handles loading for Free Form, Line, Polygon, Bounding Box and Thresholded Box.
 def load_mask(dataset, image_id, label_ids):
     """ Load instance masks for the given image. 
-        
-    """
 
+    Return: 
+        mask: Boolean map 
+        class_ids: 
+    """
     annotations = dataset[image_id]
     count = len(annotations)
     print('Num of annotations: %d' % count)
     
+    # TODO: mask should use image size (use ORIG_HEIGHT/WIDTH set in config file?)
     if count == 0:
         print('No annotations')
         mask = np.zeros((ORIG_HEIGHT, ORIG_WIDTH, 1), dtype=np.uint8)
@@ -109,7 +110,12 @@ def load_mask(dataset, image_id, label_ids):
     else:
         mask = np.zeros((ORIG_HEIGHT, ORIG_WIDTH, count), dtype=np.uint8)
         class_ids = np.zeros((count,), dtype=np.int32)
+
         for i, a in enumerate(annotations):
+
+            # TODO: select by annotation mode (bbox, polygon, freeform, etc) 
+
+            # Bounding Box  
             x = int(a['data']['x'])
             y = int(a['data']['y'])
             w = int(a['data']['width'])
@@ -117,12 +123,25 @@ def load_mask(dataset, image_id, label_ids):
             mask_instance = mask[:, :, i].copy()
             cv2.rectangle(mask_instance, (x, y), (x+w, y+h), 255, -1)
             mask[:, :, i] = mask_instance
+
+            # FreeForm 
+
+            # Line 
+
+            # Polygon 
+
+            # Thresholded Box (defer for now)
+
+            # load class id 
             if a['labelId'] in label_ids:
                 class_ids[i] = label_ids[a['labelId']]
+
     return mask.astype(np.bool), class_ids.astype(np.int32)
 
 def apply_mask(image, mask, color, alpha=0.5):
     """Apply the given mask to the image.
+    image: [height, widht, channel] 
+    Returns: image with applied color mask 
     """
     for c in range(3):
         image[:, :, c] = np.where(mask == 1,
@@ -155,8 +174,6 @@ def extract_bboxes(mask):
         boxes[i] = np.array([y1, x1, y2, x2])
     return boxes.astype(np.int32)
 
-# TODO: rename this     
-# get image ground truth from association 
 def get_image_ground_truth(dataset, image_id, label_ids):
     """Load and return ground truth data for an image (image, mask, bounding boxes).
     Input: 
@@ -177,7 +194,7 @@ def get_image_ground_truth(dataset, image_id, label_ids):
     
     original_shape = image.shape
     
-    # TODO: need to resize image, mask? 
+    # TODO: need to resize image, mask?
     
     _idx = np.sum(mask, axis=(0, 1)) > 0
     mask = mask[:, :, _idx]
@@ -208,7 +225,7 @@ def display_annotations(image, boxes, masks, class_ids, class_names,
     colors: (optional) An array or colors to use with each object
     captions: (optional) A list of strings to use as captions for each object
     """
-    # Number of instances
+    # Number of instancesload_mask
     N = boxes.shape[0]
     if not N:
         print("\n*** No instances to display *** \n")
@@ -250,7 +267,9 @@ def display_annotations(image, boxes, masks, class_ids, class_names,
         if not captions:
             class_id = class_ids[i]
             score = scores[i] if scores is not None else None
-            label = class_names[class_id]
+
+            # BUG: THIS IS A HACK! THIS IS BECAUSE class_id does not start from zero! 
+            label = class_names[class_id-1]
             x = random.randint(x1, (x1 + x2) // 2)
             caption = "{} {:.3f}".format(label, score) if score else label
         else:
