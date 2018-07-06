@@ -78,15 +78,17 @@ def display_images(image_ids, titles=None, cols=3,
         i += 1
     plt.show()
 
-def load_image(image_id):
+def load_dicom_image(image_id, to_RGB=False):
     """ Load DICOM image"""
     ds = pydicom.read_file(image_id)
     image = ds.pixel_array
     
-    # BUG: why convert to RBG?
-    # If grayscale. Convert to RGB for consistency.
-    if len(image.shape) != 3 or image.shape[2] != 3:
-        image = np.stack((image,) * 3, -1)
+    if to_RGB: 
+        
+        # If grayscale. Convert to RGB for consistency.
+        if len(image.shape) != 3 or image.shape[2] != 3:
+            image = np.stack((image,) * 3, -1)
+
     return image 
 
 # NOTE: Masks can be different types, mask is a binary true/false map.
@@ -188,7 +190,9 @@ def get_image_ground_truth(dataset, image_id, label_ids):
             of the image unless use_mini_mask is True, in which case they are
             defined in MINI_MASK_SHAPE.
     """ 
-    image = load_image(image_id)
+
+    # TODO: auto-detect image type? 
+    image = load_dicom_image(image_id)
 
     mask, class_ids = load_mask(dataset, image_id, label_ids)
     

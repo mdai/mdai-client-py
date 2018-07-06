@@ -22,9 +22,7 @@ handler.setFormatter(formatter)
 _LOGGER.addHandler(handler)
 _LOGGER.setLevel(logging.DEBUG)
 
-# TODO: consider switch into using the 
-
-class Project(object): 
+class Dataset(object): 
     label_group_id = -1 
     PROJECT_DATA_FP = None 
     PROJECT_IMAGES_FP = None 
@@ -140,6 +138,7 @@ class Project(object):
         return list(image_ids)
 
     # Todo: this should be renamed, it really just does association 
+    # rename to combine
     def associate_images_and_annotations(self, image_fps, local_label_ids, annotations_filtered): 
         """Associate image annotations with the corresponding image,
            using a unique file path identifier
