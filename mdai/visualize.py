@@ -79,7 +79,7 @@ def display_images(image_ids, titles=None, cols=3,
     plt.show()
 
 def load_dicom_image(image_id, to_RGB=False):
-    """ Load DICOM image"""
+    """ Load a DICOM image."""
     ds = pydicom.read_file(image_id)
     image = ds.pixel_array
     
@@ -91,18 +91,15 @@ def load_dicom_image(image_id, to_RGB=False):
 
     return image 
 
-# NOTE: Masks can be different types, mask is a binary true/false map.
-# NOTE: Handles loading for Free Form, Line, Polygon, Bounding Box and Thresholded Box.
+# TODO: Needt to handle loading for Free Form, Line, Polygon, Bounding Box and Thresholded Box.
 def load_mask(dataset, image_id, label_ids):
     """ Load instance masks for the given image. 
-
-    Return: 
-        mask: Boolean map 
-        class_ids: 
+        Masks can be different types, mask is a binary true/false map of the same 
+        size as the image.
     """
     annotations = dataset[image_id]
     count = len(annotations)
-    print('Num of annotations: %d' % count)
+    print('Number of annotations: %d' % count)
     
     # TODO: mask should use image size (use ORIG_HEIGHT/WIDTH set in config file?)
     if count == 0:
@@ -136,7 +133,7 @@ def load_mask(dataset, image_id, label_ids):
 
             # load class id 
             if a['labelId'] in label_ids:
-                class_ids[i] = label_ids[a['labelId']]
+                class_ids[i] = label_ids[a['labelId']]['class_id']
 
     return mask.astype(np.bool), class_ids.astype(np.int32)
 
@@ -192,7 +189,7 @@ def get_image_ground_truth(dataset, image_id, label_ids):
     """ 
 
     # TODO: auto-detect image type? 
-    image = load_dicom_image(image_id)
+    image = load_dicom_image(image_id, to_RGB=True)
 
     mask, class_ids = load_mask(dataset, image_id, label_ids)
     

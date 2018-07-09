@@ -9,36 +9,40 @@ import pandas as pd
 import pydicom 
 
 import logging
-
-#from logging.config import fileConfig
-#log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logger.config')
-#fileConfig(log_file_path)
-
+logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger(__name__)
 
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-handler.setFormatter(formatter)
-_LOGGER.addHandler(handler)
-_LOGGER.setLevel(logging.DEBUG)
-
 class Dataset(object): 
+    """
+    A dataset consists of annotations, labels and associated DICOM images. 
+    
+    A dataset can contain multiple multiple label groups. User should select which 
+    label group to use. To show all label groups, call show_label_groups() function 
+    on a Dataset object instance. To set a label group, call set_label_group() function 
+    with desired label group id. 
+
+    Local vs. Global Annotation Type: 
+    Global annotations apply to the whole instance (e.g., a CT image), while
+    local annottations apply to a part of the image (e.g., bounding box around something 
+    in the image.)
+
+    """ 
+
     label_group_id = -1 
-    PROJECT_DATA_FP = None 
-    PROJECT_IMAGES_FP = None 
+    project_data_fp = None 
+    project_images_fp = None 
 
-    def __init__(self, PROJECT_DATA_FP=None, PROJECT_IMAGES_FP=None): 
-        if PROJECT_DATA_FP is not None and PROJECT_IMAGES_FP is not None: 
-            self.PROJECT_DATA_FP = PROJECT_DATA_FP
-            self.PROJECT_IMAGES_FP = PROJECT_IMAGES_FP
+    def __init__(self, project_data_fp=None, project_images_fp=None): 
+        if project_data_fp is not None and project_images_fp is not None: 
+            self.project_data_fp = project_data_fp
+            self.project_images_fp = project_images_fp
 
-            with open(PROJECT_DATA_FP, 'r') as f:
+            with open(project_data_fp, 'r') as f:
                 self.data = json.load(f)
         self.annotations = self.data['datasets'][0]['annotations']
 
     def _is_valid_label_group(self, label_group_id):
-        """Check to see if label group id is valid. 
-        """
+        """Check to see if label group id is valid. """
         num_label_groups = len(self.data['labelGroups'])
         if label_group_id >= 0 and label_group_id < num_label_groups:  
             return True
@@ -46,29 +50,31 @@ class Dataset(object):
             return False
 
     def set_label_group(self, label_group_id):
+        """Set desired label group. """ 
         if self._is_valid_label_group(label_group_id): 
-            _LOGGER.info('Setting label group to %s, id %d' % (self.data['labelGroups'][label_group_id]['name'], label_group_id))
+            print('Setting label group to %s, Id: %d' % (self.data['labelGroups'][label_group_id]['name'], label_group_id))
             self.label_group_id = label_group_id
             return True 
         else: 
-            _LOGGER.error('Label Group id %d is invalid' % (label_group_id))
+            print('Label Group id %d is invalid' % (label_group_id))
             return False 
 
     def show_label_groups(self): 
-        print('Label Groups are:')
+        """Show avaiable label groups.""" 
+        print('Available Label Groups are:')
         for i, label_group in enumerate(self.data['labelGroups']):
-            print('id: %d, name, %s' % (i, label_group['name'])) 
+            print('Id: %d, Name: %s' % (i, label_group['name'])) 
 
     def get_labels(self, label_group_id=-1): 
-
+        """Once label group is selected, get labels for the label group."""
         if label_group_id == -1 and self.label_group_id != -1: 
             print('Getting labels for Label Group id: %d' % self.label_group_id)
             self.labels = self.data['labelGroups'][self.label_group_id]['labels']
             return self.labels
 
-        # none specified 
+        # if no label_group_id is specified 
         if label_group_id == -1: 
-            print('Please specify label group id:')
+            print('Please specify label group id using set_label_group():')
             self.show_label_groups() 
             return None 
 
@@ -78,7 +84,7 @@ class Dataset(object):
                 self.labels = self.data['labelGroups'][label_group_id]['labels']
                 return self.labels
             else: 
-                _LOGGER.error('Invalid label group id')
+                print('Invalid label group id')
                 self.show_label_groups() 
                 return None 
 
@@ -87,6 +93,7 @@ class Dataset(object):
         return self.annotations
 
     def show_labels(self): 
+        """Show labels for selected label group."""
         if self.label_group_id == -1: 
             print('Need to specify Label Group Id with set_label_group()')
             self.show_label_groups() 
@@ -95,8 +102,9 @@ class Dataset(object):
             print("id: %s, name: %s, type: %s" % (label['id'], label['name'], label['type']))
 
     def get_filtered_annotations(self, label_ids=None):
+        """Get filtered annotations for specified label_ids."""
         if label_ids is None: 
-            print('Need to specify label_ids')
+            print('Error: Need to specify label_ids!')
             return None 
 
         if self.label_group_id == -1: 
@@ -121,15 +129,14 @@ class Dataset(object):
         """ 
         uid = None
         try: 
-            uid = os.path.join(self.PROJECT_IMAGES_FP, a['StudyInstanceUID'], a['SeriesInstanceUID'], a['SOPInstanceUID']) + '.dcm'
+            uid = os.path.join(self.project_images_fp, a['StudyInstanceUID'], a['SeriesInstanceUID'], a['SOPInstanceUID']) + '.dcm'
         except Exception as error: 
             print('Exception:', error)
             print('a %s'% a)
         return uid  
 
     def get_image_ids(self, annotations_filtered):
-        """Return 
-        """
+        """Get images ids for filtered annotations."""
         image_ids = set()
         for a in annotations_filtered:
             uid = self._generate_id(a) 
@@ -137,11 +144,9 @@ class Dataset(object):
                 image_ids.add(uid)
         return list(image_ids)
 
-    # Todo: this should be renamed, it really just does association 
-    # rename to combine
     def associate_images_and_annotations(self, image_fps, local_label_ids, annotations_filtered): 
         """Associate image annotations with the corresponding image,
-           using a unique file path identifier
+           using a unique file path identifier. 
         """
         local_image_annotations = {fp: [] for fp in image_fps}
         for a in annotations_filtered:
