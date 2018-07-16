@@ -2,10 +2,6 @@
 
 MD.ai Python client library
 
-## Documentation
-
-Coming soon...
-
 ## Development
 
 -**Python version management** 
