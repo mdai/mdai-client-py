@@ -31,7 +31,6 @@ ORIG_WIDTH  = 1024
 
 # Adapted from https://github.com/matterport/Mask_RCNN/
 
-# TODO: show not sure random color but exported color in json labels 
 def random_colors(N, bright=True):
     """
     Generate random colors.
@@ -42,17 +41,6 @@ def random_colors(N, bright=True):
     hsv = [(i / N, 1, brightness) for i in range(N)]
     colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
     random.shuffle(colors)
-    return colors
-
-# BUG: this is a hack, should actually read color from label (json) file
-# TODO: remind Leon to put colors inside the labels (json) file 
-def get_colors_for_class_ids(class_ids):
-    colors = []
-    for class_id in class_ids:
-        if class_id == 1:
-            colors.append((.941, .204, .204))
-        elif class_id == 2:
-            colors.append((.973, .58, .024))
     return colors
 
 # TODO: figsize should be read from settings 
@@ -83,16 +71,16 @@ def load_dicom_image(image_id, to_RGB=False):
     ds = pydicom.read_file(image_id)
     image = ds.pixel_array
     
+    #TODO: decide if to_RGB should be true/false by default
     if to_RGB: 
-        
         # If grayscale. Convert to RGB for consistency.
         if len(image.shape) != 3 or image.shape[2] != 3:
             image = np.stack((image,) * 3, -1)
 
     return image 
 
-# TODO: Needt to handle loading for Free Form, Line, Polygon, Bounding Box and Thresholded Box.
-def load_mask(dataset, image_id, label_ids):
+# TODO: Need to handle loading for Free Form, Line, Polygon, Bounding Box and Thresholded Box.
+def load_mask(dataset, image_id, label_ids_dict):
     """ Load instance masks for the given image. 
         Masks can be different types, mask is a binary true/false map of the same 
         size as the image.
@@ -132,8 +120,8 @@ def load_mask(dataset, image_id, label_ids):
             # Thresholded Box (defer for now)
 
             # load class id 
-            if a['labelId'] in label_ids:
-                class_ids[i] = label_ids[a['labelId']]['class_id']
+            if a['labelId'] in label_ids_dict:
+                class_ids[i] = label_ids_dict[a['labelId']]['class_id']
 
     return mask.astype(np.bool), class_ids.astype(np.int32)
 
@@ -173,6 +161,7 @@ def extract_bboxes(mask):
         boxes[i] = np.array([y1, x1, y2, x2])
     return boxes.astype(np.int32)
 
+# TODO: not all have bounding boxes, should this be an option? 
 def get_image_ground_truth(dataset, image_id, label_ids):
     """Load and return ground truth data for an image (image, mask, bounding boxes).
     Input: 
@@ -195,8 +184,7 @@ def get_image_ground_truth(dataset, image_id, label_ids):
     
     original_shape = image.shape
     
-    # TODO: need to resize image, mask?
-    
+    # TODO: need to resize image, mask?    
     _idx = np.sum(mask, axis=(0, 1)) > 0
     mask = mask[:, :, _idx]
     class_ids = class_ids[_idx]
@@ -297,3 +285,19 @@ def display_annotations(image, boxes, masks, class_ids, class_names,
     ax.imshow(masked_image.astype(np.uint8))
     if auto_show:
         plt.show()
+
+def draw_box_on_image(image, boxes, h, w):
+    """Draw box on an image. 
+    Params: 
+        image: three channel (e.g. RGB) image 
+        boxes: normalized box coordinate (between 0.0 and 1.0)
+        h: image height 
+        w: image width 
+    """ 
+
+    for i in range(len(boxes)):
+        (left, right, top, bottom) = (boxes[i][0] * w, boxes[i][2] * w,
+                                      boxes[i][1] * h, boxes[i][3] * h)
+        p1 = (int(left), int(top))
+        p2 = (int(right), int(bottom))
+        cv2.rectangle(image, p1, p2, (77, 255, 9), 3, 1)
