@@ -1,21 +1,17 @@
-""" 
+"""
+"""
 
 
-""" 
+import math
+import numpy as np
 
-
-import math 
-import numpy as np 
 
 class Config(object):
-    """ Configurations 
-    """ 
+    """Configurations
+    """
 
+    def __init__(self):
+        pass
 
-    def __init__(self): 
-        pass 
-
-
-    def show(self): 
+    def show(self):
         print("Configurations:")
-        
