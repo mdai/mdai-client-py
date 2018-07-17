@@ -307,12 +307,12 @@ def display_annotations(
 
 
 def draw_box_on_image(image, boxes, h, w):
-    """Draw box on an image. 
-    Params: 
-        image: three channel (e.g. RGB) image 
+    """Draw box on an image.
+    Params:
+        image: three channel (e.g. RGB) image
         boxes: normalized box coordinate (between 0.0 and 1.0)
-        h: image height 
-        w: image width 
+        h: image height
+        w: image width
     """
 
     for i in range(len(boxes)):
