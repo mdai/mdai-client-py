@@ -4,11 +4,15 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-PyJWT = "*"
-pytest = "*"
+numpy = "*"
+matplotlib = "*"
+pillow = "*"
 
 [dev-packages]
-black = "==18.6b2"
+pytest = "*"
+tensorflow = ">=1.9.0"
+keras = ">=2.2.0"
+black = "==18.6b4"
 pycodestyle = "*"
 
 [requires]
