@@ -2,6 +2,8 @@
 
 MD.ai Python client library
 
+**Currently experimental -- API may change significantly in future releases.**
+
 ## Development
 
 ### Python version
@@ -22,10 +24,6 @@ pipenv install --dev --three
 ```
 
 VSCode should automatically load the virtualenv located in the current directory. If not, go to `Python: Select Interpreter` from the command palette.
-
-### Packaging
-
-[flit](https://flit.readthedocs.io/en/latest/)
 
 ### Formatting
 

@@ -2,41 +2,36 @@ from setuptools import setup
 from setuptools import find_packages
 from mdai import __version__
 
-long_description = """
-MD.ai Python client library.
-Currently experimental -- API may change significantly in future releases.
-"""
-
-install_requires = [
-    "arrow",
-    "matplotlib",
-    "numpy",
-    "pandas",
-    "pillow",
-    "pydicom>=1.1.0",
-    "requests",
-    "retrying",
-    "tqdm",
-]
-
-extras_require = {
-    "test": ["pytest"],
-    "keras": ["keras>=2.2.0"],
-    "tensorflow": ["tensorflow>=1.9.0"],
-}
+with open("README.md") as f:
+    long_description = f.read()
 
 setup(
     name="mdai",
     version=__version__,
     description="MD.ai Python client library",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     author="MD.ai",
     author_email="github@md.ai",
     url="https://github.com/mdai/mdai-client-py",
     download_url="https://github.com/mdai/mdai-client-py/tarball/{}".format(__version__),
     license="Apache-2.0",
-    install_requires=install_requires,
-    extras_require=extras_require,
+    install_requires=[
+        "arrow",
+        "matplotlib",
+        "numpy",
+        "pandas",
+        "pillow",
+        "pydicom>=1.1.0",
+        "requests",
+        "retrying",
+        "tqdm",
+    ],
+    extras_require={
+        "test": ["pytest"],
+        "keras": ["keras>=2.2.0"],
+        "tensorflow": ["tensorflow>=1.9.0"],
+    },
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
