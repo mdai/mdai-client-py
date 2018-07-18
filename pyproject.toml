@@ -4,8 +4,8 @@ build-backend = "flit.buildapi"
 
 [tool.flit.metadata]
 module = "mdai"
-author = "Leon Chen"
-author-email = "leon@md.ai"
+author = "MD.ai"
+author-email = "github@md.ai"
 home-page = "https://www.md.ai"
 classifiers = ["License :: OSI Approved :: Apache Software License"]
 

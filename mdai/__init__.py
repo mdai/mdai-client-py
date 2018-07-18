@@ -2,6 +2,8 @@
 
 __version__ = "0.0.1"
 
+from .client import Client
+
 # import logging
 # import logging.config
 
