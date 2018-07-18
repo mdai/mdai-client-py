@@ -2,6 +2,8 @@
 .venv/
 .cache/
 __pycache__/
+dist/
+*.egg-info/
 .python-version
 .ipynb_checkpoints/
 scratchpad-*.ipynb
