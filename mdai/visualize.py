@@ -10,10 +10,8 @@ from skimage.measure import find_contours
 import matplotlib.pyplot as plt
 from matplotlib import patches, lines
 from matplotlib.patches import Polygon
-import IPython.display
 
-""" Visualization utility functions. 
-"""
+# import IPython.display
 
 # TODO: put CONFIG VALUES in config.py
 ORIG_HEIGHT = 1024
@@ -21,10 +19,10 @@ ORIG_WIDTH = 1024
 
 
 def random_colors(N, bright=True):
-    """
-    Generate random colors.
-    To get visually distinct colors, generate them in HSV space then
-    convert to RGB.
+    """ Generate random colors.
+    To get visually distinct colors, generate them in HSV space then convert to RGB.
+    Args:
+        N (int): Number of colors. 
     """
     brightness = 1.0 if bright else 0.7
     hsv = [(i / N, 1, brightness) for i in range(N)]
@@ -33,8 +31,15 @@ def random_colors(N, bright=True):
     return colors
 
 
-# TODO: figsize should be read from settings
 def display_images(image_ids, titles=None, cols=3, cmap=None, norm=None, interpolation=None):
+    """Display images given image ids.
+    
+    Args: 
+        image_ids (list): List of image ids.
+    
+    TODO: 
+        figsize should not be hardcoded.
+    """
     titles = titles if titles is not None else [""] * len(image_ids)
     rows = len(image_ids) // cols + 1
     plt.figure(figsize=(14, 14 * rows // cols))
@@ -56,11 +61,17 @@ def display_images(image_ids, titles=None, cols=3, cmap=None, norm=None, interpo
 
 
 def load_dicom_image(image_id, to_RGB=False):
-    """ Load a DICOM image."""
+    """ Load a DICOM image.
+    Args: 
+        image_id (str): image id (filepath).
+        to_RGB (bool): if True, convert grayscale image to RGB.
+    
+    Returns: 
+        image array.
+    """
     ds = pydicom.read_file(image_id)
     image = ds.pixel_array
 
-    # TODO: decide if to_RGB should be true/false by default
     if to_RGB:
         # If grayscale. Convert to RGB for consistency.
         if len(image.shape) != 3 or image.shape[2] != 3:
@@ -69,13 +80,16 @@ def load_dicom_image(image_id, to_RGB=False):
     return image
 
 
-# TODO: Need to handle loading for Free Form, Line, Polygon, Bounding Box and Thresholded Box.
-def load_mask(dataset, image_id, label_ids_dict):
-    """ Load instance masks for the given image. 
-        Masks can be different types, mask is a binary true/false map of the same 
-        size as the image.
+def load_mask(imgs_anns, image_id, label_ids_dict):
+    """Load instance masks for the given image. Masks can be different types, 
+    mask is a binary true/false map of the same size as the image.
+
+    TODO: 
+        Need to handle loading for Free Form, Line, Polygon, Bounding Box and Thresholded Box.
+
+
     """
-    annotations = dataset[image_id]
+    annotations = imgs_anns[image_id]
     count = len(annotations)
     print("Number of annotations: %d" % count)
 
@@ -118,8 +132,12 @@ def load_mask(dataset, image_id, label_ids_dict):
 
 def apply_mask(image, mask, color, alpha=0.5):
     """Apply the given mask to the image.
-    image: [height, widht, channel] 
-    Returns: image with applied color mask 
+    
+    Args: 
+        image: height, widht, channel.
+    
+    Returns: 
+        image with applied color mask. 
     """
     for c in range(3):
         image[:, :, c] = np.where(
@@ -130,8 +148,12 @@ def apply_mask(image, mask, color, alpha=0.5):
 
 def extract_bboxes(mask):
     """Compute bounding boxes from masks.
-    mask: [height, width, num_instances]. Mask pixels are either 1 or 0.
-    Returns: bbox array [num_instances, (y1, x1, y2, x2)].
+    
+    Args: 
+        mask: [height, width, num_instances]. Mask pixels are either 1 or 0.
+    
+    Returns: 
+        bounding box array [num_instances, (y1, x1, y2, x2)].
     """
     boxes = np.zeros([mask.shape[-1], 4], dtype=np.int32)
     for i in range(mask.shape[-1]):
@@ -153,26 +175,26 @@ def extract_bboxes(mask):
     return boxes.astype(np.int32)
 
 
-# TODO: not all have bounding boxes, should this be an option?
-def get_image_ground_truth(dataset, image_id, label_ids):
+def get_image_ground_truth(imgs_anns, image_id, label_ids):
     """Load and return ground truth data for an image (image, mask, bounding boxes).
-    Input: 
-        dataset: 
-        image_id:         
+
+    Args: 
+        imgs_anns: Dict of images and associated annotations.
+        image_id: Image id.
+    
     Returns:
         image: [height, width, 3]
         shape: the original shape of the image before resizing and cropping.
         class_ids: [instance_count] Integer class IDs
         bbox: [instance_count, (y1, x1, y2, x2)]
-        mask: [height, width, instance_count]. The height and width are those
-            of the image unless use_mini_mask is True, in which case they are
-            defined in MINI_MASK_SHAPE.
+        mask: [height, width, instance_count]. The height and width are those of the image unless 
+        use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.
     """
 
     # TODO: auto-detect image type?
     image = load_dicom_image(image_id, to_RGB=True)
 
-    mask, class_ids = load_mask(dataset, image_id, label_ids)
+    mask, class_ids = load_mask(imgs_anns, image_id, label_ids)
 
     original_shape = image.shape
 
@@ -204,18 +226,21 @@ def display_annotations(
     colors=None,
     captions=None,
 ):
+    """Display annotations for image.
+    
+    Args: 
+        boxes: [num_instance, (y1, x1, y2, x2, class_id)] in image coordinates.
+        masks: [height, width, num_instances]
+        class_ids: [num_instances]
+        class_names: list of class names of the dataset
+        scores: (optional) confidence scores for each box
+        title: (optional) Figure title
+        show_mask, show_bbox: To show masks and bounding boxes or not
+        figsize: (optional) the size of the image
+        colors: (optional) An array or colors to use with each object
+        captions: (optional) A list of strings to use as captions for each object
     """
-    boxes: [num_instance, (y1, x1, y2, x2, class_id)] in image coordinates.
-    masks: [height, width, num_instances]
-    class_ids: [num_instances]
-    class_names: list of class names of the dataset
-    scores: (optional) confidence scores for each box
-    title: (optional) Figure title
-    show_mask, show_bbox: To show masks and bounding boxes or not
-    figsize: (optional) the size of the image
-    colors: (optional) An array or colors to use with each object
-    captions: (optional) A list of strings to use as captions for each object
-    """
+
     # Number of instancesload_mask
     N = boxes.shape[0]
     if not N:
@@ -296,9 +321,10 @@ def display_annotations(
 
 def draw_box_on_image(image, boxes, h, w):
     """Draw box on an image.
-    Params:
-        image: three channel (e.g. RGB) image
-        boxes: normalized box coordinate (between 0.0 and 1.0)
+
+    Args:
+        image: three channel (e.g. RGB) image.
+        boxes: normalized box coordinate (between 0.0 and 1.0).
         h: image height
         w: image width
     """

@@ -38,31 +38,24 @@ from skimage.transform import resize
 
 
 class DataGenerator(Sequence):
-    """Generates data for Keras"""
-
     def __init__(
-        self,
-        img_ids,
-        imgs_anns,
-        batch_size=32,
-        dim=(32, 32),
-        n_channels=1,
-        n_classes=10,
-        shuffle=True,
-        label_id_to_class_id=None,
+        self, dataset, batch_size=32, dim=(32, 32), n_channels=1, n_classes=10, shuffle=True
     ):
+        """Generates data for Keras fit_generator() function.
+        """
+
         # Initialization
         self.dim = dim
         self.batch_size = batch_size
 
-        self.img_ids = img_ids
-        self.imgs_anns = imgs_anns
+        self.img_ids = dataset.image_ids
+        self.imgs_anns = dataset.imgs_anns
+        self.dataset = dataset
 
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.shuffle = shuffle
         self.on_epoch_end()
-        self.label_id_to_class_id = label_id_to_class_id
 
     def __len__(self):
         "Denotes the number of batches per epoch"
@@ -70,6 +63,7 @@ class DataGenerator(Sequence):
 
     def __getitem__(self, index):
         "Generate one batch of data"
+
         # Generate indexes of the batch
         indexes = self.indexes[index * self.batch_size : (index + 1) * self.batch_size]
 
@@ -88,7 +82,8 @@ class DataGenerator(Sequence):
             np.random.shuffle(self.indexes)
 
     def __data_generation(self, img_ids_temp):
-        "Generates data containing batch_size samples"  # X : (n_samples, *dim, n_channels)
+        "Generates data containing batch_size samples"
+
         # Initialization
         X = np.empty((self.batch_size, *self.dim, self.n_channels))
         y = np.empty((self.batch_size), dtype=int)
@@ -100,5 +95,5 @@ class DataGenerator(Sequence):
             X[i,] = image
 
             ann = self.imgs_anns[ID][0]
-            y[i] = self.label_id_to_class_id(ann["labelId"])
+            y[i] = self.dataset.labels_dict[ann["labelId"]]["class_id"]
         return X, to_categorical(y, num_classes=self.n_classes)

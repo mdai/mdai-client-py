@@ -93,13 +93,16 @@ def create_tf_bbox_example(annotations, image_id, label_ids_dict):
 
 
 def write_to_tfrecords(output_path, imgs_anns, image_ids, label_ids_dict):
+    """Write images and annotations to tfrecords.
+    Args: 
+        output_path (str): Output file path of the TFRecord.
+        imgs_anns (dict): Dictionary with image ids as keys and annotations as values.
+        image_ids (list): List of image ids.
 
-    """
-    Usage: 
-        TRAIN_OUTPATH = os.path.abspath('./train.record')
-        VALID_OUTPATH = os.path.abspath('./valid.record')
-        export.write_to_tfrecords(TRAIN_OUTPATH, imgs_anns, image_ids_train, label_ids_dict)
-        export.write_to_tfrecords(VALID_OUTPATH, imgs_anns, image_ids_val, label_ids_dict)
+    Examples:
+
+        >>> train_record_fp = os.path.abspath('./train.record')
+        >>> export.write_to_tfrecords(train_record_fp, imgs_anns, image_ids_train, label_ids_dict)
     """
 
     def _print_progress(count, total):
