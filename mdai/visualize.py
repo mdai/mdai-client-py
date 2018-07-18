@@ -15,21 +15,9 @@ import IPython.display
 """ Visualization utility functions. 
 """
 
-# TODO: move mdai-api-test.ipynb to mdai-client-py/notebooks directory
-# TODO: color should be exported in json labels
-
 # TODO: put CONFIG VALUES in config.py
 ORIG_HEIGHT = 1024
 ORIG_WIDTH = 1024
-
-# example:
-# class Config(object):
-#     NAME = None
-
-# class DisplayConfig(Config):
-#     pass
-
-# Adapted from https://github.com/matterport/Mask_RCNN/
 
 
 def random_colors(N, bright=True):

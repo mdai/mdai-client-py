@@ -1,5 +1,8 @@
 import random
 from PIL import Image
+import numpy as np
+
+from mdai import visualize
 
 
 def hex2rgb(h):
@@ -28,3 +31,74 @@ def train_test_split(image_ids, shuffle=True, validation_split=0.1):
         % (len(image_ids_train), len(image_ids_val))
     )
     return image_ids_train, image_ids_val
+
+
+from keras.utils import Sequence, to_categorical
+from skimage.transform import resize
+
+
+class DataGenerator(Sequence):
+    """Generates data for Keras"""
+
+    def __init__(
+        self,
+        img_ids,
+        imgs_anns,
+        batch_size=32,
+        dim=(32, 32),
+        n_channels=1,
+        n_classes=10,
+        shuffle=True,
+        label_id_to_class_id=None,
+    ):
+        # Initialization
+        self.dim = dim
+        self.batch_size = batch_size
+
+        self.img_ids = img_ids
+        self.imgs_anns = imgs_anns
+
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.shuffle = shuffle
+        self.on_epoch_end()
+        self.label_id_to_class_id = label_id_to_class_id
+
+    def __len__(self):
+        "Denotes the number of batches per epoch"
+        return int(np.floor(len(self.img_ids) / self.batch_size))
+
+    def __getitem__(self, index):
+        "Generate one batch of data"
+        # Generate indexes of the batch
+        indexes = self.indexes[index * self.batch_size : (index + 1) * self.batch_size]
+
+        # Find list of IDs
+        img_ids_temp = [self.img_ids[k] for k in indexes]
+
+        # Generate data
+        X, y = self.__data_generation(img_ids_temp)
+
+        return X, y
+
+    def on_epoch_end(self):
+        "Updates indexes after each epoch"
+        self.indexes = np.arange(len(self.img_ids))
+        if self.shuffle == True:
+            np.random.shuffle(self.indexes)
+
+    def __data_generation(self, img_ids_temp):
+        "Generates data containing batch_size samples"  # X : (n_samples, *dim, n_channels)
+        # Initialization
+        X = np.empty((self.batch_size, *self.dim, self.n_channels))
+        y = np.empty((self.batch_size), dtype=int)
+
+        # Generate data
+        for i, ID in enumerate(img_ids_temp):
+            image = visualize.load_dicom_image(ID, to_RGB=True)
+            image = resize(image, (self.dim[0], self.dim[1]))
+            X[i,] = image
+
+            ann = self.imgs_anns[ID][0]
+            y[i] = self.label_id_to_class_id(ann["labelId"])
+        return X, to_categorical(y, num_classes=self.n_classes)
