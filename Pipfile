@@ -4,16 +4,22 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-numpy = "*"
+arrow = "*"
 matplotlib = "*"
+numpy = "*"
+pandas = "*"
 pillow = "*"
+pydicom = ">=1.1.0"
+requests = "*"
+retrying = "*"
+tqdm = "*"
 
 [dev-packages]
+black = "==18.6b4"
+keras = ">=2.2.0"
+pycodestyle = "*"
 pytest = "*"
 tensorflow = ">=1.9.0"
-keras = ">=2.2.0"
-black = "==18.6b4"
-pycodestyle = "*"
 
 [requires]
 python_version = "3.6"
