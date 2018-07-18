@@ -61,7 +61,8 @@ class Client:
         annotations_data_manager.wait_until_ready()
 
         p = Project(
-            data_fp=annotations_data_manager.data_path, images_fp=images_data_manager.data_path
+            annotations_fp=annotations_data_manager.data_path,
+            images_dir=images_data_manager.data_path,
         )
         return p
 

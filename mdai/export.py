@@ -92,7 +92,7 @@ def create_tf_bbox_example(annotations, image_id, label_ids_dict):
     return tf_example
 
 
-def write_to_tfrecords(output_path, imgs_anns, image_ids, label_ids_dict):
+def write_to_tfrecords(output_path, dataset):
     """Write images and annotations to tfrecords.
     Args: 
         output_path (str): Output file path of the TFRecord.
@@ -119,8 +119,8 @@ def write_to_tfrecords(output_path, imgs_anns, image_ids, label_ids_dict):
 
     print("\nOutput File Path: %s" % output_path)
     writer = tf.python_io.TFRecordWriter(output_path)
-    num_images = len(image_ids)
-    for i, image_id in enumerate(image_ids):
+    num_images = len(dataset.image_ids)
+    for i, image_id in enumerate(dataset.image_ids):
         _print_progress(count=i, total=num_images - 1)
         annotations = imgs_anns[image_id]
         tf_example = create_tf_bbox_example(annotations, image_id, label_ids_dict)

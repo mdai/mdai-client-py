@@ -14,17 +14,17 @@ class Project:
     def __init__(self, annotations_fp=None, images_dir=None):
         """ 
         Args: 
-            data_fp (str): File path to the exported Json file. 
-            images_fp (str): File path to the DICOM images directory. 
+            annotations_fp (str): File path to the exported JSON annotation file. 
+            images_dir (str): File path to the DICOM images directory. 
         """
         self.annotations_fp = None
-        self.images_fp = None
+        self.images_dir = None
         self.label_groups = []
         self.datasets = []
 
         if annotations_fp is not None and images_dir is not None:
             self.annotations_fp = annotations_fp
-            self.images_fp = images_dir
+            self.images_dir = images_dir
 
             with open(self.annotations_fp, "r") as f:
                 self.data = json.load(f)
@@ -162,11 +162,11 @@ class Dataset:
     A dataset consists of DICOM images and annotations.
     """
 
-    def __init__(self, dataset_data, images_fp):
-        """ images_fp is the DICOM image directory. 
+    def __init__(self, dataset_data, images_dir):
+        """ images_dir is the DICOM image directory. 
         """
         self.dataset_data = dataset_data
-        self.images_fp = images_fp
+        self.images_dir = images_dir
 
         self.id = dataset_data["id"]
         self.name = dataset_data["name"]
@@ -207,7 +207,7 @@ class Dataset:
         try:
             uid = (
                 os.path.join(
-                    self.images_fp,
+                    self.images_dir,
                     ann["StudyInstanceUID"],
                     ann["SeriesInstanceUID"],
                     ann["SOPInstanceUID"],
