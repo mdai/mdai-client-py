@@ -1,7 +1,7 @@
 import os
+import sys
 import threading
 import json
-import math
 import zipfile
 import requests
 import urllib3.exceptions
@@ -34,15 +34,18 @@ class Client:
         self.session = requests.Session()
         self._test_endpoint()
 
-    def project(self, project_id, path=os.getcwd()):
+    def project(self, project_id, path="."):
         """Initializes Project class given project id.
 
         Arguments:
             project_id: hash ID of project.
             path: directory used for data.
         """
-        os.makedirs(path, exist_ok=True)
-        print("Using path '{}' for data.".format(path))
+        if path == ".":
+            print("Using working directory for data.")
+        else:
+            os.makedirs(path, exist_ok=True)
+            print("Using path '{}' for data.".format(path))
 
         data_manager_kwargs = {
             "domain": self.domain,
@@ -51,14 +54,14 @@ class Client:
             "session": self.session,
             "headers": self._create_headers(),
         }
-        images_data_manager = ProjectDataManager("images", **data_manager_kwargs)
         annotations_data_manager = ProjectDataManager("annotations", **data_manager_kwargs)
+        images_data_manager = ProjectDataManager("images", **data_manager_kwargs)
 
-        images_data_manager.create_data_export_job()
         annotations_data_manager.create_data_export_job()
+        images_data_manager.create_data_export_job()
 
-        images_data_manager.wait_until_ready()
         annotations_data_manager.wait_until_ready()
+        images_data_manager.wait_until_ready()
 
         p = Project(
             annotations_fp=annotations_data_manager.data_path,
@@ -80,7 +83,7 @@ class Client:
         if r.status_code == 200:
             print("Successfully authenticated to {}.".format(self.domain))
         else:
-            raise Exception("Authorization error. Make sure your access token is valid.")
+            print("Authorization error. Make sure your access token is valid.")
 
     @retry(
         retry_on_exception=retry_on_http_error,
@@ -112,9 +115,7 @@ class ProjectDataManager:
     """Manager for project data exports and downloads.
     """
 
-    def __init__(
-        self, type, domain=None, project_id=None, path=os.getcwd(), session=None, headers=None
-    ):
+    def __init__(self, type, domain=None, project_id=None, path=".", session=None, headers=None):
         if type not in ["images", "annotations"]:
             raise ValueError("type must be 'images' or 'annotations'.")
         if not domain:
@@ -147,6 +148,8 @@ class ProjectDataManager:
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code == 202:
+            msg = "Preparing {} export for project {}...".format(self.type, self.project_id)
+            print(msg.ljust(100))
             self._check_data_export_job_progress()
         else:
             self._on_data_export_job_error()
@@ -196,13 +199,10 @@ class ProjectDataManager:
                     # so we will opt to be explicit instead.
                     time_remaining_fmt = "in {} seconds".format(time_remaining)
                 end_char = "\r" if progress < 100 else "\n"
-                print(
-                    "Exporting {} for project {}...{}% (time remaining: {}).".format(
-                        self.type, self.project_id, progress, time_remaining_fmt
-                    ).ljust(100),
-                    end=end_char,
-                    flush=True,
+                msg = "Exporting {} for project {}...{}% (time remaining: {}).".format(
+                    self.type, self.project_id, progress, time_remaining_fmt
                 )
+                print(msg.ljust(100), end=end_char, flush=True)
             # run progress check at 1s intervals so long as status == 'running' and progress < 100
             if progress < 100:
                 t = threading.Timer(1.0, self._check_data_export_job_progress)
@@ -230,7 +230,7 @@ class ProjectDataManager:
         endpoint = "https://{}/api/data-export/{}/error".format(self.domain, self.type)
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
-        raise Exception("Error exporting {} for project {}.".format(self.type, self.project_id))
+        print("Error exporting {} for project {}.".format(self.type, self.project_id))
 
     def _download_file(self, file_key):
         """Downloads file via signed URL requested from MD.ai API.
@@ -247,17 +247,14 @@ class ProjectDataManager:
 
         # total size in bytes
         total_size = int(r.headers.get("content-length", 0))
-        block_size = 1024
+        block_size = 32 * 1024
         wrote = 0
         with open(filepath, "wb") as f:
-            for data in tqdm(
-                r.iter_content(block_size),
-                total=math.ceil(total_size // block_size),
-                unit="KB",
-                unit_scale=True,
-            ):
-                wrote = wrote + len(data)
-                f.write(data)
+            with tqdm(total=total_size, unit="B", unit_scale=True, unit_divisor=1024) as pbar:
+                for chunk in r.iter_content(block_size):
+                    f.write(chunk)
+                    wrote = wrote + len(chunk)
+                    pbar.update(block_size)
         if total_size != 0 and wrote != total_size:
             raise IOError("Error downloading file {}.".format(file_key))
 
@@ -273,3 +270,4 @@ class ProjectDataManager:
 
         # fire ready threading.Event
         self._ready.set()
+        print("Success: {} data for project {} ready.".format(self.type, self.project_id))
