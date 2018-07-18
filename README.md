@@ -2,7 +2,7 @@
 
 MD.ai Python client library
 
-**Currently experimental -- API may change significantly in future releases.**
+**Currently pre-alpha -- API may change significantly in future releases.**
 
 ## Development
 
