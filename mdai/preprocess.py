@@ -163,7 +163,10 @@ class Dataset:
     """
 
     def __init__(self, dataset_data, images_dir):
-        """ images_dir is the DICOM image directory. 
+        """ 
+        Args: 
+            dataset_data: Dataset json data
+            images_dir: DICOM images directory. 
         """
         self.dataset_data = dataset_data
         self.images_dir = images_dir
@@ -176,8 +179,10 @@ class Dataset:
 
     def prepare(self):
         if self.selected_label_ids is None:
-            # return self.annotations
-            print("Warning: No subset of label ids selected. Using all label ids.")
+            raise Exception(
+                "Label ids must be selected. Use select_label_ids() to \
+                             set project wide label ids."
+            )
 
         ann = self.get_annotations(self.selected_label_ids)
         self.imgs_anns = self._associate_images_and_annotations(ann)

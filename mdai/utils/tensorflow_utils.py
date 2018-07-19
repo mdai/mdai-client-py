@@ -5,41 +5,27 @@ import pydicom
 import numpy as np
 import io
 import hashlib
-import json
 from object_detection.utils import dataset_util
-
 from mdai import visualize
 
 
 def create_tf_bbox_example(annotations, image_id, label_ids_dict):
 
     image = visualize.load_dicom_image(image_id)
-
-    # For Bounding Box Annotation Mode
-    image = np.asarray(image)
-
     width = int(image.shape[1])
     height = int(image.shape[0])
 
-    #########################################
-    # TODO:
-    # save to file
-    im = Image.fromarray(image)
+    # TODO: I think object detection API decoder needs jpeg images...
+    raw_img = mdai.visualize.load_dicom_image(test_image_id, to_RGB=True)
+    img = Image.fromarray(raw_img)
+    encoded_jpg = io.BytesIO()
+    img.save(encoded_jpg, format="jpeg")
 
-    image_id = image_id + ".jpg"
-    im.save(image_id)
-
-    with tf.gfile.GFile(image_id, "rb") as fid:
-        encoded_jpg = fid.read()
-
-    encoded_jpg_io = io.BytesIO(encoded_jpg)
-
-    image = Image.open(encoded_jpg_io)
-    if image.format != "JPEG":
+    img_check = Image.open(encoded_jpg)
+    if img_check.format != "JPEG":
         raise ValueError("Image format not JPEG")
 
     key = hashlib.sha256(encoded_jpg).hexdigest()
-    ##############################################
 
     xmins = []  # List of normalized left x coordinates in bounding box (1 per box)
     xmaxs = []  # List of normalized right x coordinates in bounding box (1 per box)
@@ -96,13 +82,11 @@ def write_to_tfrecords(output_path, dataset):
     """Write images and annotations to tfrecords.
     Args: 
         output_path (str): Output file path of the TFRecord.
-        imgs_anns (dict): Dictionary with image ids as keys and annotations as values.
-        image_ids (list): List of image ids.
-
+        dataset (object): Mdai dataset object.
     Examples:
 
         >>> train_record_fp = os.path.abspath('./train.record')
-        >>> export.write_to_tfrecords(train_record_fp, imgs_anns, image_ids_train, label_ids_dict)
+        >>> export.write_to_tfrecords(train_record_fp, train_dataset, label_ids_dict)
     """
 
     def _print_progress(count, total):
