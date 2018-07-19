@@ -5,6 +5,6 @@ __version__ = "0.0.2"
 
 from . import visualize
 from . import preprocess
-from utils import common_utils
+from .utils import common_utils
 
 from .client import Client
