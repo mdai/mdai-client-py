@@ -8,3 +8,4 @@ dist/
 .python-version
 .ipynb_checkpoints/
 scratchpad-*.ipynb
+data/

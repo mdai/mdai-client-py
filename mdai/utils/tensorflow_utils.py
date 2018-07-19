@@ -9,23 +9,23 @@ from object_detection.utils import dataset_util
 from mdai import visualize
 
 
-def create_tf_bbox_example(annotations, image_id, label_ids_dict):
+def create_tf_bbox_example(annotations, image_id, labels_dict):
 
     image = visualize.load_dicom_image(image_id)
     width = int(image.shape[1])
     height = int(image.shape[0])
 
     # TODO: I think object detection API decoder needs jpeg images...
-    raw_img = mdai.visualize.load_dicom_image(test_image_id, to_RGB=True)
+    raw_img = visualize.load_dicom_image(image_id, to_RGB=True)
     img = Image.fromarray(raw_img)
-    encoded_jpg = io.BytesIO()
-    img.save(encoded_jpg, format="jpeg")
+    img_buffer = io.BytesIO()
+    img.save(img_buffer, format="jpeg")
+    encoded_jpg = Image.open(img_buffer)
 
-    img_check = Image.open(encoded_jpg)
-    if img_check.format != "JPEG":
+    if encoded_jpg.format != "JPEG":
         raise ValueError("Image format not JPEG")
 
-    key = hashlib.sha256(encoded_jpg).hexdigest()
+    key = hashlib.sha256(img_buffer.getvalue()).hexdigest()
 
     xmins = []  # List of normalized left x coordinates in bounding box (1 per box)
     xmaxs = []  # List of normalized right x coordinates in bounding box (1 per box)
@@ -51,7 +51,7 @@ def create_tf_bbox_example(annotations, image_id, label_ids_dict):
         ymaxs.append(float(y_max / height))
 
         classes_text.append(a["labelId"].encode("utf8"))
-        classes.append(label_ids_dict[a["labelId"]]["class_id"])
+        classes.append(labels_dict[a["labelId"]]["class_id"])
 
     # print(classes)
 
@@ -63,7 +63,7 @@ def create_tf_bbox_example(annotations, image_id, label_ids_dict):
                 "image/filename": dataset_util.bytes_feature(image_id.encode("utf8")),
                 "image/source_id": dataset_util.bytes_feature(image_id.encode("utf8")),
                 "image/key/sha256": dataset_util.bytes_feature(key.encode("utf8")),
-                "image/encoded": dataset_util.bytes_feature(encoded_jpg),
+                "image/encoded": dataset_util.bytes_feature(img_buffer.getvalue()),
                 "image/format": dataset_util.bytes_feature("jpg".encode("utf8")),
                 "image/object/bbox/xmin": dataset_util.float_list_feature(xmins),
                 "image/object/bbox/xmax": dataset_util.float_list_feature(xmaxs),
@@ -106,7 +106,7 @@ def write_to_tfrecords(output_path, dataset):
     num_images = len(dataset.image_ids)
     for i, image_id in enumerate(dataset.image_ids):
         _print_progress(count=i, total=num_images - 1)
-        annotations = imgs_anns[image_id]
-        tf_example = create_tf_bbox_example(annotations, image_id, label_ids_dict)
+        annotations = dataset.imgs_anns[image_id]
+        tf_example = create_tf_bbox_example(annotations, image_id, dataset.labels_dict)
         writer.write(tf_example.SerializeToString())
     writer.close()

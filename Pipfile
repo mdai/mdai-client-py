@@ -13,6 +13,7 @@ pydicom = ">=1.1.0"
 requests = "*"
 retrying = "*"
 tqdm = "*"
+opencv-python ="*"
 
 [dev-packages]
 black = "==18.6b4"
@@ -20,6 +21,8 @@ keras = ">=2.2.0"
 pycodestyle = "*"
 pytest = "*"
 tensorflow = ">=1.9.0"
+jupyter = "*"
+notebook = "*"
 
 [requires]
 python_version = "3.6"

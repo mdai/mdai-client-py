@@ -26,6 +26,7 @@ setup(
         "requests",
         "retrying",
         "tqdm",
+        "opencv-python",
     ],
     extras_require={
         "test": ["pytest"],

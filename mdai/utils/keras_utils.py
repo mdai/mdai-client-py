@@ -1,8 +1,10 @@
 
 from mdai.visualize import load_dicom_image
 from keras.utils import Sequence, to_categorical
-from skimage.transform import resize
+
+# from skimage.transform import resize
 import numpy as np
+from PIL import Image
 
 
 class DataGenerator(Sequence):
@@ -59,7 +61,10 @@ class DataGenerator(Sequence):
         # Generate data
         for i, ID in enumerate(img_ids_temp):
             image = load_dicom_image(ID, to_RGB=True)
-            image = resize(image, (self.dim[0], self.dim[1]))
+            image = Image.fromarray(image)
+            image = image.resize((self.dim[0], self.dim[1]))
+            # image = resize(image, (self.dim[0], self.dim[1]))
+
             X[i,] = image
 
             ann = self.imgs_anns[ID][0]
