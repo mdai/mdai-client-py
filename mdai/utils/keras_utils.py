@@ -19,7 +19,7 @@ class DataGenerator(Sequence):
         self.batch_size = batch_size
 
         self.img_ids = dataset.image_ids
-        self.imgs_anns = dataset.imgs_anns
+        self.imgs_anns_dict = dataset.imgs_anns_dict
         self.dataset = dataset
 
         self.n_channels = n_channels
@@ -67,6 +67,6 @@ class DataGenerator(Sequence):
 
             X[i,] = image
 
-            ann = self.imgs_anns[ID][0]
+            ann = self.imgs_anns_dict[ID][0]
             y[i] = self.dataset.labels_dict[ann["labelId"]]["class_id"]
         return X, to_categorical(y, num_classes=self.n_classes)

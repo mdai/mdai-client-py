@@ -5,6 +5,7 @@ import warnings
 import json
 import pandas as pd
 import pydicom
+import collections
 
 
 class Project:
@@ -12,10 +13,10 @@ class Project:
     """
 
     def __init__(self, annotations_fp=None, images_dir=None):
-        """ 
-        Args: 
-            annotations_fp (str): File path to the exported JSON annotation file. 
-            images_dir (str): File path to the DICOM images directory. 
+        """
+        Args:
+            annotations_fp (str): File path to the exported JSON annotation file.
+            images_dir (str): File path to the DICOM images directory.
         """
         self.annotations_fp = None
         self.images_dir = None
@@ -41,12 +42,9 @@ class Project:
         return self.label_groups
 
     def show_label_groups_info(self):
-        print("Label Groups:")
         for label_group in self.label_groups:
-            print("Name: %s, Id: %s" % (label_group.name, label_group.id))
-            print("\t")
-            label_group.show_labels_info()
-        print("")
+            print("Label Group Name: %s, Id: %s" % (label_group.name, label_group.id))
+            label_group.show_labels_info("\t")
 
     def get_label_group_by_name(self, label_group_name):
         for label_group in self.label_groups:
@@ -93,15 +91,15 @@ class Project:
             dataset.labels_dict = self.labels_dict
 
     def _create_labels_dict(self):
-        """Create a dict with label id as key, and a nested dict of class_id, and class_text 
-        as values, e.g., {'L_v8n': {'class_id': 1, 'class_text': 'Lung Opacity'}}, 
+        """Create a dict with label id as key, and a nested dict of class_id, and class_text
+        as values, e.g., {'L_v8n': {'class_id': 1, 'class_text': 'Lung Opacity'}},
         where L_v8n is the label id, with a class_id of 1 and class text of 'Lung Opacity'.
 
-        Args: 
-            label_ids (list): list of label ids. 
+        Args:
+            label_ids (list): list of label ids.
             labels (list): list of tuples of (label_id, label_name)
-        
-        Returns: 
+
+        Returns:
             Label ids dictionary.
         """
         label_ids = self.selected_label_ids
@@ -120,10 +118,10 @@ class Project:
 
 
 class LabelGroup:
-    """A label group contains multiple labels.  
-    
+    """A label group contains multiple labels.
+
     Each label has properties such id, name, color, type, scope, annotation mode, rad lex tag ids.
-    
+
     Label type: Global typed annotations apply to the whole instance (e.g., a CT image),
     while local typed annotations apply to a part of the image (e.g., ROI bounding box).
 
@@ -134,7 +132,7 @@ class LabelGroup:
 
     def __init__(self, label_group):
         """
-        Args: 
+        Args:
             label_group (object: json) JSON data for label group
         """
         self.label_group_data = label_group
@@ -145,16 +143,16 @@ class LabelGroup:
         """Get label ids and names """
         return [(label["id"], label["name"]) for label in self.label_group_data["labels"]]
 
-    def show_labels_info(self):
+    def show_labels_info(self, print_offset=""):
         """Show labels info"""
-        print("Labels:")
+        print("{}Labels:".format(print_offset))
         for label in self.label_group_data["labels"]:
-            print("Name: %s, Id: %s" % (label["name"], label["id"]))
+            print("{}Name: {}, Id: {}".format(print_offset, label["name"], label["id"]))
         print("")
 
-    def get_label_group_dict(self):
-        """Raw label group JSON data"""
-        return self.label_group_data
+    # def get_label_group_dict(self):
+    #     """Raw label group JSON data"""
+    #     return self.label_group_data
 
 
 class Dataset:
@@ -163,19 +161,22 @@ class Dataset:
     """
 
     def __init__(self, dataset_data, images_dir):
-        """ 
-        Args: 
+        """
+        Args:
             dataset_data: Dataset json data
-            images_dir: DICOM images directory. 
+            images_dir: DICOM images directory.
         """
         self.dataset_data = dataset_data
         self.images_dir = images_dir
 
         self.id = dataset_data["id"]
         self.name = dataset_data["name"]
-        self.annotations = dataset_data["annotations"]
+        self.all_annotations = dataset_data["annotations"]
+
         self.selected_label_ids = None
+        self.image_ids = None
         self.labels_dict = None
+        self.imgs_anns_dict = None
 
     def prepare(self):
         if self.selected_label_ids is None:
@@ -184,27 +185,36 @@ class Dataset:
                              set project wide label ids."
             )
 
-        ann = self.get_annotations(self.selected_label_ids)
-        self.imgs_anns = self._associate_images_and_annotations(ann)
+        # filter annotations by selected label ids
+        ann_filtered = self.get_filtered_annotations(self.selected_label_ids)
 
-    def get_annotations(self, label_ids):
+        self.imgs_anns_dict = self._associate_images_and_annotations(ann_filtered)
+
+    def get_all_annotations(self):
+        print("Dataset contains %d annotations." % len(self.all_annotations))
+        return self.all_annotations
+
+    def get_filtered_annotations(self, label_ids):
         """Returns annotations, filtered by label ids.
         """
         if label_ids is None:
-            print("Dataset contains %d annotations." % len(self.annotations))
-            return self.annotations
+            print("Dataset contains %d annotations." % len(self.all_annotations))
+            return self.all_annotations
 
-        # TODO: print label ids
-        ann_filtered = [a for a in self.annotations if a["labelId"] in label_ids]
-        print("Dataset contains %d annotations." % len(ann_filtered))
+        ann_filtered = [a for a in self.all_annotations if a["labelId"] in label_ids]
+        print(
+            "Dataset contains {} annotations, filtered by label ids {}.".format(
+                len(ann_filtered), label_ids
+            )
+        )
         return ann_filtered
 
     def _generate_uid(self, ann):
-        """Generate an unique image identifier based on the file path and DICOM structure.
+        """Generate an unique image identifier based on the DICOM structure.
 
         Args:
             ann (list): List of annotations.
-        
+
         Returns:
             A unique image id.
         """
@@ -225,15 +235,22 @@ class Dataset:
         return uid
 
     def get_image_ids(self):
+        if not self.image_ids:
+            raise Exception("Call project.prepare() first.")
+        print(
+            "Dataset contains {} images, filtered by label ids {}.".format(
+                len(self.image_ids), self.selected_label_ids
+            )
+        )
         return self.image_ids
 
-    def _get_image_ids(self, ann):
+    def _generate_image_ids(self, ann):
         """Get images ids for annotations.
 
-        Args: 
+        Args:
             ann (list): List of annotations.
 
-        Returns: 
+        Returns:
             A list of image ids.
         """
         image_ids = set()
@@ -243,21 +260,23 @@ class Dataset:
                 image_ids.add(uid)
         return list(image_ids)
 
-    def _associate_images_and_annotations(self, ann):
+    def _associate_images_and_annotations(self, ann_filtered):
         """Build a dictionary with image ids and annotations, filtered by label ids.
 
-        Args: 
+        Args:
             ann (list): List of annotations.
             label_ids (list): List of label ids. Annotations is filtered based on label ids.
-        
+
         Returns:
             Dictionary with image ids as keys and annotations as values.
         """
-        self.image_ids = self._get_image_ids(ann)
+        self.image_ids = self._generate_image_ids(ann_filtered)
 
         # empty dictionary with image ids as keys
+        imgs_anns_dict = collections.OrderedDict()
         imgs_anns_dict = {fp: [] for fp in self.image_ids}
-        for a in ann:
+
+        for a in ann_filtered:
             uid = self._generate_uid(a)
             imgs_anns_dict[uid].append(a)
         return imgs_anns_dict
@@ -266,4 +285,29 @@ class Dataset:
         for k, v in self.labels_dict.items():
             if v["class_id"] == class_id:
                 return v["class_text"]
+
+        print("class_id not found.")
+        return None
+
+    def class_text_to_class_id(self, class_text):
+        for k, v in self.labels_dict.items():
+            if v["class_text"] == class_text:
+                return v["class_id"]
+        print("class_text not found.")
+        return None
+
+    def label_id_to_class_id(self, label_id):
+        for k, v in self.labels_dict.items():
+            if k == label_id:
+                return v["class_id"]
+        print("label_id not found.")
+        return None
+
+    def show_selected_label_info(self):
+        for k, v in self.labels_dict.items():
+            print(
+                "Label id: {}, Class id: {}, Class text: {}".format(
+                    k, v["class_id"], v["class_text"]
+                )
+            )
 
