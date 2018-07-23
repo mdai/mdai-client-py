@@ -22,6 +22,7 @@ class Project:
         self.images_dir = None
         self.label_groups = []
         self.datasets = []
+        self.selected_label_ids = None
 
         if annotations_fp is not None and images_dir is not None:
             self.annotations_fp = annotations_fp
