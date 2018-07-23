@@ -123,7 +123,7 @@ class ProjectDataManager:
         if not project_id:
             raise ValueError("project_id is not specified.")
         if not os.path.exists(path):
-            raise OSError("Path '{}' does not exist.".foramt(path))
+            raise OSError("Path '{}' does not exist.".format(path))
 
         self.type = type
         self.domain = domain
