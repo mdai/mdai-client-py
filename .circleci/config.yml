@@ -15,7 +15,7 @@ jobs:
       - run:
           command: |
             sudo pip install pipenv
-            pipenv install
+            pipenv install --dev
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
@@ -25,7 +25,7 @@ jobs:
       - run:
           name: run tests
           command: |
-            pipenv run "pytest --verbose"
+            pipenv run "pytest"
       - store_artifacts:
           path: test-reports
           destination: test-reports
