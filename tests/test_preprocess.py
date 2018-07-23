@@ -25,10 +25,10 @@ def download_file(url):
 
 @pytest.fixture
 def project():
+
+    os.makedirs(TESTS_DATA_FP, exist_ok=True)
     annotations_fp = download_file(HELLOWORLD_ANNO_URL)
     images_dir_zipped = download_file(HELLOWORLD_IMAGES_URL)
-
-    print(images_dir_zipped)
     with zipfile.ZipFile(images_dir_zipped) as zf:
         zf.extractall(TESTS_DATA_FP)
     (images_dir, ext) = os.path.splitext(images_dir_zipped)
@@ -61,3 +61,8 @@ def test_dataset(project):
     train_image_ids = train_dataset.get_image_ids()
     assert len(train_image_ids) == 65
 
+
+# TODO: add more tests
+# - check class id to class text
+# - check filtered vs. unfiltered
+# - check generate image ids (case where SOP UI is not available?)
