@@ -68,5 +68,5 @@ class DataGenerator(Sequence):
             X[i,] = image
 
             ann = self.imgs_anns_dict[ID][0]
-            y[i] = self.dataset.labels_dict[ann["labelId"]]["class_id"]
+            y[i] = self.dataset.classes_dict[ann["labelId"]]["class_id"]
         return X, to_categorical(y, num_classes=self.n_classes)

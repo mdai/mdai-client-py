@@ -46,16 +46,16 @@ def test_project(project):
     datasets = project.get_datasets()
     assert len(datasets) == 3
 
-    assert project.selected_label_ids == None
+    # assert project.selected_label_ids == None
 
-    label_ids = ["L_yxv", "L_dyy"]
-    project.set_label_ids(label_ids)
-    assert project.selected_label_ids == label_ids
+    # label_ids = ["L_yxv", "L_dyy"]
+    # project.set_label_ids(label_ids)
+    # assert project.selected_label_ids == label_ids
 
 
 def test_dataset(project):
-    label_ids = ["L_yxv", "L_dyy"]
-    project.set_label_ids(label_ids)
+    labels_dict = {"L_yxv": 0, "L_dyy": 1}  # chest, abdomen
+    project.set_labels_dict(labels_dict)
     train_dataset = project.get_dataset_by_name("TRAIN")
     train_dataset.prepare()
     train_image_ids = train_dataset.get_image_ids()

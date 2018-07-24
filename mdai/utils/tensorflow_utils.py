@@ -9,7 +9,7 @@ from object_detection.utils import dataset_util
 from mdai import visualize
 
 
-def create_tf_bbox_example(annotations, image_id, labels_dict):
+def create_tf_bbox_example(annotations, image_id, classes_dict):
 
     image = visualize.load_dicom_image(image_id)
     width = int(image.shape[1])
@@ -51,7 +51,7 @@ def create_tf_bbox_example(annotations, image_id, labels_dict):
         ymaxs.append(float(y_max / height))
 
         classes_text.append(a["labelId"].encode("utf8"))
-        classes.append(labels_dict[a["labelId"]]["class_id"])
+        classes.append(classes_dict[a["labelId"]]["class_id"])
 
     # print(classes)
 
@@ -80,7 +80,7 @@ def create_tf_bbox_example(annotations, image_id, labels_dict):
 
 def write_to_tfrecords(output_path, dataset):
     """Write images and annotations to tfrecords.
-    Args: 
+    Args:
         output_path (str): Output file path of the TFRecord.
         dataset (object): Mdai dataset object.
     Examples:
@@ -107,6 +107,6 @@ def write_to_tfrecords(output_path, dataset):
     for i, image_id in enumerate(dataset.image_ids):
         _print_progress(count=i, total=num_images - 1)
         annotations = dataset.imgs_anns[image_id]
-        tf_example = create_tf_bbox_example(annotations, image_id, dataset.labels_dict)
+        tf_example = create_tf_bbox_example(annotations, image_id, dataset.classes_dict)
         writer.write(tf_example.SerializeToString())
     writer.close()
