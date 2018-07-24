@@ -8,7 +8,7 @@ import urllib3.exceptions
 from retrying import retry
 from tqdm import tqdm
 import arrow
-from mdai.preprocess import Project
+from .preprocess import Project
 
 
 def retry_on_http_error(exception):
@@ -151,6 +151,12 @@ class ProjectDataManager:
             msg = "Preparing {} export for project {}...".format(self.type, self.project_id)
             print(msg.ljust(100))
             self._check_data_export_job_progress()
+        elif r.status_code == 401:
+            msg = (
+                "Project {} at domain {}".format(self.project_id, self.domain),
+                " does not exist or you do not have sufficient permissions for access.",
+            )
+            print(msg)
         else:
             self._on_data_export_job_error()
 
