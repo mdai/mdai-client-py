@@ -179,15 +179,20 @@ class ProjectDataManager:
         try:
             body = r.json()
             status = body["status"]
-            progress = body["progress"]
-            time_remaining = body["timeRemaining"]
         except (TypeError, KeyError):
             self._on_data_export_job_error()
             return
 
-        if body["status"] == "running":
-            progress = int(progress) if progress else 0
-            time_remaining = int(time_remaining) if time_remaining else 0
+        if status == "running":
+            try:
+                progress = int(body["progress"])
+            except (TypeError, ValueError):
+                progress = 0
+            try:
+                time_remaining = int(body["timeRemaining"])
+            except (TypeError, ValueError):
+                time_remaining = 0
+
             # print formatted progress info
             if progress > 0 and progress <= 100 and time_remaining > 0:
                 if time_remaining > 45:
@@ -203,14 +208,16 @@ class ProjectDataManager:
                     self.type, self.project_id, progress, time_remaining_fmt
                 )
                 print(msg.ljust(100), end=end_char, flush=True)
+
             # run progress check at 1s intervals so long as status == 'running' and progress < 100
             if progress < 100:
                 t = threading.Timer(1.0, self._check_data_export_job_progress)
                 t.start()
+
             return
-        elif body["status"] == "done":
+        elif status == "done":
             self._on_data_export_job_done()
-        elif body["status"] == "error":
+        elif status == "error":
             self._on_data_export_job_error()
 
     def _on_data_export_job_done(self):
