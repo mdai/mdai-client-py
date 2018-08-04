@@ -8,6 +8,7 @@ MD.ai Python Client Library
 
 ### Python version
 
+
 [Pyenv](https://github.com/pyenv/pyenv) is recommended for managing python versions. Currently, python 3.6 is used for development.
 
 ### Dependencies
