@@ -142,7 +142,7 @@ class LabelGroup:
         self.name = self.label_group_data["name"]
         self.id = self.label_group_data["id"]
 
-    def get_json(self):
+    def get_data(self):
         return self.label_group_data
 
     def get_labels(self):
