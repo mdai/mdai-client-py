@@ -41,10 +41,10 @@ class Project:
     def get_label_groups(self):
         return self.label_groups
 
-    def show_label_groups_info(self):
+    def show_label_groups(self):
         for label_group in self.label_groups:
             print("Label Group, Id: %s, Name: %s" % (label_group.id, label_group.name))
-            label_group.show_labels_info("\t")
+            label_group.show_labels("\t")
 
     def get_label_group_by_name(self, label_group_name):
         for label_group in self.label_groups:
@@ -59,9 +59,10 @@ class Project:
         return None
 
     def get_datasets(self):
+        """Get JSON representation of datasets"""
         return self.datasets
 
-    def show_datasets_info(self):
+    def show_datasets(self):
         print("Datasets:")
         for dataset in self.datasets:
             print("Id: %s, Name: %s" % (dataset.id, dataset.name))
@@ -118,30 +119,37 @@ class Project:
 
 class LabelGroup:
     """A label group contains multiple labels.
+
     Each label has properties such id, name, color, type, scope, annotation mode, rad lex tag ids.
-    Label type: Global typed annotations apply to the whole instance (e.g., a CT image), \
-    while local typed annotations apply to a part of the image (e.g., ROI bounding box).
-    Label scope: Scope can be of study, series, or instance.
-    Label annotation mode: can be of bounding boxes, free form , polgon, etc.
+
+    Label type:
+    Global typed annotations apply to the whole instance (e.g., a CT image), while \
+    local typed annotations apply to a part of the image (e.g., ROI bounding box).
+
+    Label scope:
+    Scope can be of study, series, or instance.
+
+    Label annotation mode:
+    Annotation mode can be of bounding boxes, free form, polgon, etc.
     """
 
-    def __init__(self, label_group):
+    def __init__(self, label_group_data):
         """
         Args:
             label_group (object: json) JSON data for label group
         """
-        self.label_group_data = label_group
+        self.label_group_data = label_group_data
         self.name = self.label_group_data["name"]
         self.id = self.label_group_data["id"]
 
-    def get_data(self):
+    def get_json(self):
         return self.label_group_data
 
     def get_labels(self):
         """Get label ids and names """
         return [(label["id"], label["name"]) for label in self.label_group_data["labels"]]
 
-    def show_labels_info(self, print_offset=""):
+    def show_labels(self, print_offset=""):
         """Show labels info"""
         print("{}Labels:".format(print_offset))
         for label in self.label_group_data["labels"]:
@@ -150,8 +158,7 @@ class LabelGroup:
 
 
 class Dataset:
-    """
-    A dataset consists of DICOM images and annotations.
+    """A dataset consists of DICOM images and annotations.
     """
 
     def __init__(self, dataset_data, images_dir):
@@ -184,9 +191,13 @@ class Dataset:
 
     def get_annotations(self, label_ids=None, verbose=False):
         """Returns annotations, filtered by label ids.
+        Args:
+            label_ids: if specified, will return annotations with matching label ids.
+            verbose: if True, print debug messages.
         """
         if label_ids is None:
-            print("Dataset contains %d annotations." % len(self.all_annotations))
+            if verbose:
+                print("Dataset contains %d annotations." % len(self.all_annotations))
             return self.all_annotations
 
         ann_filtered = [a for a in self.all_annotations if a["labelId"] in label_ids]
@@ -200,13 +211,13 @@ class Dataset:
         return ann_filtered
 
     def _generate_uid(self, ann):
-        """Generate an unique image identifier based on the DICOM structure.
+        """Generate an unique image identifier based on the DICOM file structure.
 
         Args:
             ann (list): List of annotations.
 
         Returns:
-            A unique image id.
+            A unique image identifier based on the DICOM file structure.
         """
         uid = None
         try:
@@ -225,6 +236,10 @@ class Dataset:
         return uid
 
     def get_image_ids(self, verbose=False):
+        """Returns image ids. Must call prepare() method first in order to generate image ids.
+        Args:
+            verbose (boolean): If True, print debug message.
+        """
         if not self.image_ids:
             raise Exception("Call project.prepare() first.")
 
@@ -252,23 +267,23 @@ class Dataset:
                 image_ids.add(uid)
         return list(image_ids)
 
-    def _associate_images_and_annotations(self, ann_filtered):
-        """Build a dictionary with image ids and annotations, filtered by label ids.
+    def _associate_images_and_annotations(self, anns):
+        """Generate image ids to annotations mapping.
+        Each image can have zero or more annotations.
 
         Args:
-            ann (list): List of annotations.
-            label_ids (list): List of label ids. Annotations is filtered based on label ids.
+            anns (list): List of annotations.
 
         Returns:
-            Dictionary with image ids as keys and annotations as values.
+            A dictionary with image ids as keys and annotations as values.
         """
-        self.image_ids = self._generate_image_ids(ann_filtered)
+        self.image_ids = self._generate_image_ids(anns)
 
         # empty dictionary with image ids as keys
         imgs_anns_dict = collections.OrderedDict()
         imgs_anns_dict = {fp: [] for fp in self.image_ids}
 
-        for a in ann_filtered:
+        for a in anns:
             uid = self._generate_uid(a)
             imgs_anns_dict[uid].append(a)
         return imgs_anns_dict
@@ -278,24 +293,21 @@ class Dataset:
             if v["class_id"] == class_id:
                 return v["class_text"]
 
-        print("class_id not found.")
-        return None
+        raise Exception("class_id {} is invalid.".format(class_id))
 
     def class_text_to_class_id(self, class_text):
         for k, v in self.classes_dict.items():
             if v["class_text"] == class_text:
                 return v["class_id"]
-        print("class_text not found.")
-        return None
+        raise Exception("class_text {} is invalid.".format(class_text))
 
     def label_id_to_class_id(self, label_id):
         for k, v in self.classes_dict.items():
             if k == label_id:
                 return v["class_id"]
-        print("label_id not found.")
-        return None
+        raise Exception("label_id {} is invalid.".format(label_id))
 
-    def show_classes_info(self):
+    def show_classes(self):
         for k, v in self.classes_dict.items():
             print(
                 "Label id: {}, Class id: {}, Class text: {}".format(
