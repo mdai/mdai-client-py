@@ -21,8 +21,10 @@ ORIG_WIDTH = 1024
 def random_colors(N, bright=True):
     """ Generate random colors.
     To get visually distinct colors, generate them in HSV space then convert to RGB.
+
     Args:
-        N (int): Number of colors. 
+        N (int):
+            Number of colors.
     """
     brightness = 1.0 if bright else 0.7
     hsv = [(i / N, 1, brightness) for i in range(N)]
@@ -31,14 +33,15 @@ def random_colors(N, bright=True):
     return colors
 
 
+# based on functions in: https://github.com/matterport/Mask_RCNN/blob/master/mrcnn/visualize.py
 def display_images(image_ids, titles=None, cols=3, cmap=None, norm=None, interpolation=None):
     """Display images given image ids.
-    
-    Args: 
-        image_ids (list): List of image ids.
-    
-    TODO: 
-        figsize should not be hardcoded.
+
+    Args:
+        image_ids (list):
+            List of image ids.
+
+    TODO: figsize should not be hardcoded.
     """
     titles = titles if titles is not None else [""] * len(image_ids)
     rows = len(image_ids) // cols + 1
@@ -62,11 +65,13 @@ def display_images(image_ids, titles=None, cols=3, cmap=None, norm=None, interpo
 
 def load_dicom_image(image_id, to_RGB=False):
     """ Load a DICOM image.
-    Args: 
-        image_id (str): image id (filepath).
-        to_RGB (bool): if True, convert grayscale image to RGB.
-    
-    Returns: 
+    Args:
+        image_id (str):
+            image id (filepath).
+        to_RGB (bool, optional):
+            Convert grayscale image to RGB.
+
+    Returns:
         image array.
     """
     ds = pydicom.read_file(image_id)
@@ -81,13 +86,10 @@ def load_dicom_image(image_id, to_RGB=False):
 
 
 def load_mask(imgs_anns, image_id, label_ids_dict):
-    """Load instance masks for the given image. Masks can be different types, 
+    """Load instance masks for the given image. Masks can be different types,
     mask is a binary true/false map of the same size as the image.
 
-    TODO: 
-        Need to handle loading for Free Form, Line, Polygon, Bounding Box and Thresholded Box.
-
-
+    TODO: Need to handle loading for Free Form, Line, Polygon, Bounding Box and Thresholded Box.
     """
     annotations = imgs_anns[image_id]
     count = len(annotations)
@@ -132,12 +134,12 @@ def load_mask(imgs_anns, image_id, label_ids_dict):
 
 def apply_mask(image, mask, color, alpha=0.5):
     """Apply the given mask to the image.
-    
-    Args: 
+
+    Args:
         image: height, widht, channel.
-    
-    Returns: 
-        image with applied color mask. 
+
+    Returns:
+        image with applied color mask.
     """
     for c in range(3):
         image[:, :, c] = np.where(
@@ -148,11 +150,12 @@ def apply_mask(image, mask, color, alpha=0.5):
 
 def extract_bboxes(mask):
     """Compute bounding boxes from masks.
-    
-    Args: 
-        mask: [height, width, num_instances]. Mask pixels are either 1 or 0.
-    
-    Returns: 
+
+    Args:
+        mask [height, width, num_instances]:
+            Mask pixels are either 1 or 0.
+
+    Returns:
         bounding box array [num_instances, (y1, x1, y2, x2)].
     """
     boxes = np.zeros([mask.shape[-1], 4], dtype=np.int32)
@@ -178,16 +181,24 @@ def extract_bboxes(mask):
 def get_image_ground_truth(imgs_anns, image_id, label_ids):
     """Load and return ground truth data for an image (image, mask, bounding boxes).
 
-    Args: 
-        imgs_anns: Dict of images and associated annotations.
-        image_id: Image id.
-    
+    Args:
+        imgs_anns:
+            Dict of images and associated annotations.
+        image_id:
+            Image id.
+
     Returns:
-        image: [height, width, 3]
-        shape: the original shape of the image before resizing and cropping.
-        class_ids: [instance_count] Integer class IDs
-        bbox: [instance_count, (y1, x1, y2, x2)]
-        mask: [height, width, instance_count]. The height and width are those of the image unless 
+        image:
+            [height, width, 3]
+
+        shape:
+            the original shape of the image before resizing and cropping.
+        class_ids:
+            [instance_count] Integer class IDs
+        bbox:
+            [instance_count, (y1, x1, y2, x2)]
+        mask:
+            [height, width, instance_count]. The height and width are those of the image unless
         use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.
     """
 
@@ -227,18 +238,28 @@ def display_annotations(
     captions=None,
 ):
     """Display annotations for image.
-    
-    Args: 
-        boxes: [num_instance, (y1, x1, y2, x2, class_id)] in image coordinates.
-        masks: [height, width, num_instances]
-        class_ids: [num_instances]
-        class_names: list of class names of the dataset
-        scores: (optional) confidence scores for each box
-        title: (optional) Figure title
-        show_mask, show_bbox: To show masks and bounding boxes or not
-        figsize: (optional) the size of the image
-        colors: (optional) An array or colors to use with each object
-        captions: (optional) A list of strings to use as captions for each object
+
+    Args:
+        boxes:
+            [num_instance, (y1, x1, y2, x2, class_id)] in image coordinates.
+        masks:
+            [height, width, num_instances]
+        class_ids:
+            [num_instances]
+        class_names:
+            list of class names of the dataset
+        scores:
+            (optional) confidence scores for each box
+        title:
+            (optional) Figure title
+        show_mask, show_bbox:
+            To show masks and bounding boxes or not
+        figsize:
+            (optional) the size of the image
+        colors:
+            (optional) An array or colors to use with each object
+        captions:
+            (optional) A list of strings to use as captions for each object
     """
 
     # Number of instancesload_mask
@@ -323,10 +344,14 @@ def draw_box_on_image(image, boxes, h, w):
     """Draw box on an image.
 
     Args:
-        image: three channel (e.g. RGB) image.
-        boxes: normalized box coordinate (between 0.0 and 1.0).
-        h: image height
-        w: image width
+        image:
+            three channel (e.g. RGB) image.
+        boxes:
+            normalized box coordinate (between 0.0 and 1.0).
+        h:
+            image height
+        w:
+            image width
     """
 
     for i in range(len(boxes)):

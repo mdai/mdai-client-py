@@ -10,13 +10,17 @@ import collections
 
 class Project:
     """Project consists of label groups, and datasets.
+
+    Args:
+        annotations_fp (str):
+            File path to the exported JSON annotation file.
+        images_dir (str):
+            File path to the DICOM images directory.
     """
 
     def __init__(self, annotations_fp=None, images_dir=None):
         """
-        Args:
-            annotations_fp (str): File path to the exported JSON annotation file.
-            images_dir (str): File path to the DICOM images directory.
+
         """
         self.annotations_fp = None
         self.images_dir = None
@@ -96,7 +100,8 @@ class Project:
         the label id, with a class_id of 1 and class text of 'Lung Opacity'.
 
         Args:
-            labels_dict: dictionary containing label ids, and (user defined) class ids
+            labels_dict:
+                dictionary containing label ids, and (user defined) class ids
 
         Returns:
             classes dict
@@ -119,18 +124,15 @@ class Project:
 
 class LabelGroup:
     """A label group contains multiple labels.
-
     Each label has properties such id, name, color, type, scope, annotation mode, rad lex tag ids.
 
     Label type:
-    Global typed annotations apply to the whole instance (e.g., a CT image), while \
-    local typed annotations apply to a part of the image (e.g., ROI bounding box).
-
+        Global typed annotations apply to the whole instance (e.g., a CT image), while
+        local typed annotations apply to a part of the image (e.g., ROI bounding box).
     Label scope:
-    Scope can be of study, series, or instance.
-
+        Scope can be of study, series, or instance.
     Label annotation mode:
-    Annotation mode can be of bounding boxes, free form, polgon, etc.
+        Annotation mode can be of bounding boxes, free form, polygon, etc.
     """
 
     def __init__(self, label_group_data):
@@ -159,14 +161,15 @@ class LabelGroup:
 
 class Dataset:
     """A dataset consists of DICOM images and annotations.
+    Args:
+        dataset_data:
+            Dataset json data.
+        images_dir:
+            DICOM images directory.
     """
 
     def __init__(self, dataset_data, images_dir):
-        """
-        Args:
-            dataset_data: Dataset json data.
-            images_dir: DICOM images directory.
-        """
+
         self.dataset_data = dataset_data
         self.images_dir = images_dir
 
@@ -191,9 +194,13 @@ class Dataset:
 
     def get_annotations(self, label_ids=None, verbose=False):
         """Returns annotations, filtered by label ids.
+
         Args:
-            label_ids: if specified, will return annotations with matching label ids.
-            verbose: if True, print debug messages.
+            label_ids (optional):
+                Filter returned annotations by matching label ids.
+
+            verbose (optional:
+                Print debug messages.
         """
         if label_ids is None:
             if verbose:
@@ -214,7 +221,8 @@ class Dataset:
         """Generate an unique image identifier based on the DICOM file structure.
 
         Args:
-            ann (list): List of annotations.
+            ann (list):
+                List of annotations.
 
         Returns:
             A unique image identifier based on the DICOM file structure.
@@ -237,8 +245,10 @@ class Dataset:
 
     def get_image_ids(self, verbose=False):
         """Returns image ids. Must call prepare() method first in order to generate image ids.
+
         Args:
-            verbose (boolean): If True, print debug message.
+            verbose (Optional):
+                Print debug message.
         """
         if not self.image_ids:
             raise Exception("Call project.prepare() first.")
@@ -255,7 +265,8 @@ class Dataset:
         """Get images ids for annotations.
 
         Args:
-            ann (list): List of annotations.
+            ann (list):
+            List of image ids.
 
         Returns:
             A list of image ids.
@@ -272,7 +283,8 @@ class Dataset:
         Each image can have zero or more annotations.
 
         Args:
-            anns (list): List of annotations.
+            anns (list):
+                List of annotations.
 
         Returns:
             A dictionary with image ids as keys and annotations as values.
