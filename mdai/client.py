@@ -34,7 +34,7 @@ class Client:
         self.session = requests.Session()
         self._test_endpoint()
 
-    def project(self, project_id, path="."):
+    def project(self, project_id, path=".", force_download=False):
         """Initializes Project class given project id.
 
         Arguments:
@@ -54,8 +54,10 @@ class Client:
             "session": self.session,
             "headers": self._create_headers(),
         }
-        annotations_data_manager = ProjectDataManager("annotations", **data_manager_kwargs)
-        images_data_manager = ProjectDataManager("images", **data_manager_kwargs)
+        annotations_data_manager = ProjectDataManager(
+            "annotations", force_download, **data_manager_kwargs
+        )
+        images_data_manager = ProjectDataManager("images", force_download, **data_manager_kwargs)
 
         annotations_data_manager.create_data_export_job()
         images_data_manager.create_data_export_job()
@@ -115,7 +117,16 @@ class ProjectDataManager:
     """Manager for project data exports and downloads.
     """
 
-    def __init__(self, type, domain=None, project_id=None, path=".", session=None, headers=None):
+    def __init__(
+        self,
+        type,
+        force_download,
+        domain=None,
+        project_id=None,
+        path=".",
+        session=None,
+        headers=None,
+    ):
         if type not in ["images", "annotations"]:
             raise ValueError("type must be 'images' or 'annotations'.")
         if not domain:
@@ -126,6 +137,8 @@ class ProjectDataManager:
             raise OSError("Path '{}' does not exist.".format(path))
 
         self.type = type
+        self.force_download = force_download
+
         self.domain = domain
         self.project_id = project_id
         self.path = path
@@ -232,10 +245,45 @@ class ProjectDataManager:
         r = self.session.post(endpoint, json=params, headers=self.headers)
         try:
             file_key = r.json()["fileKey"]
+
             if file_key:
-                # download in separate thread
-                t = threading.Thread(target=self._download_file, args=(file_key,))
-                t.start()
+
+                # check cached file
+                filepath = os.path.join(self.path, file_key)
+
+                if self.type == "images":
+                    data_path = os.path.splitext(filepath)[0]
+                elif self.type == "annotations":
+                    data_path = filepath
+
+                # if file has been downloaded previously
+                if not self.force_download:
+                    if os.path.exists(filepath) or os.path.exists(data_path):
+                        if self.type == "images":
+                            if not os.path.exists(data_path):
+                                print("Extracting archive: {}".format(file_key))
+                                with zipfile.ZipFile(filepath, "r") as f:
+                                    f.extractall(self.path)
+                            self.data_path = data_path
+                        elif self.type == "annotations":
+                            self.data_path = data_path
+
+                        # fire ready threading.Event
+                        self._ready.set()
+                        print(
+                            "Using cached {} data for project {}.".format(
+                                self.type, self.project_id
+                            )
+                        )
+                    else:
+                        # download in separate thread
+                        t = threading.Thread(target=self._download_file, args=(file_key,))
+                        t.start()
+                else:
+                    # download in separate thread
+                    t = threading.Thread(target=self._download_file, args=(file_key,))
+                    t.start()
+
         except (TypeError, KeyError):
             self._on_data_export_job_error(type, project_id)
 
