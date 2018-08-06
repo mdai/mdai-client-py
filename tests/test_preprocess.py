@@ -1,49 +1,13 @@
 import pytest
-import os
-import urllib
-import zipfile
-import shutil
-import requests
-
-import pydicom
-
-from mdai.preprocess import Project
 
 
-HELLOWORLD_IMAGES_URL = "https://s3.amazonaws.com/mdai-test-data-public/mdai_public_project_PVq9raBJ_dataset_all_2018-07-17-101532.zip"
-HELLOWORLD_ANNO_URL = "https://s3.amazonaws.com/mdai-test-data-public/mdai_public_project_PVq9raBJ_dataset_all_labelgroup_all_2018-07-17-101553.json"
-TESTS_DATA_FP = "tests/data"
-
-
-def download_file(url):
-    local_filename = os.path.join(TESTS_DATA_FP, url.split("/")[-1])
-    r = requests.get(url, stream=True)
-    with open(local_filename, "wb") as f:
-        shutil.copyfileobj(r.raw, f)
-    return local_filename
-
-
-@pytest.fixture
-def project():
-
-    os.makedirs(TESTS_DATA_FP, exist_ok=True)
-    annotations_fp = download_file(HELLOWORLD_ANNO_URL)
-    images_dir_zipped = download_file(HELLOWORLD_IMAGES_URL)
-    with zipfile.ZipFile(images_dir_zipped) as zf:
-        zf.extractall(TESTS_DATA_FP)
-    (images_dir, ext) = os.path.splitext(images_dir_zipped)
-
-    p = Project(annotations_fp=annotations_fp, images_dir=images_dir)
-    return p
-
-
-def test_project(project):
+def test_project(hello_world_project):
 
     # label groups
-    label_groups = project.get_label_groups()
+    label_groups = hello_world_project.get_label_groups()
     assert label_groups[0].id == "G_3lv"
 
-    datasets = project.get_datasets()
+    datasets = hello_world_project.get_datasets()
     assert len(datasets) == 3
 
     # assert project.selected_label_ids == None
@@ -53,10 +17,10 @@ def test_project(project):
     # assert project.selected_label_ids == label_ids
 
 
-def test_dataset(project):
+def test_dataset(hello_world_project):
     labels_dict = {"L_yxv": 0, "L_dyy": 1}  # chest, abdomen
-    project.set_labels_dict(labels_dict)
-    train_dataset = project.get_dataset_by_name("TRAIN")
+    hello_world_project.set_labels_dict(labels_dict)
+    train_dataset = hello_world_project.get_dataset_by_name("TRAIN")
     train_dataset.prepare()
     train_image_ids = train_dataset.get_image_ids()
     assert len(train_image_ids) == 65
