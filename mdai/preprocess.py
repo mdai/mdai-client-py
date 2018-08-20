@@ -6,6 +6,7 @@ import json
 import pandas as pd
 import pydicom
 import collections
+import glob
 
 
 class Project:
@@ -76,23 +77,48 @@ class Project:
         for dataset in self.datasets:
             if dataset.name == dataset_name:
                 return dataset
-        return None
+
+        raise ValueError("Dataset name {} does not exist.".format(dataset_name))
 
     def get_dataset_by_id(self, dataset_id):
         for dataset in self.datasets:
             if dataset.id == dataset_id:
                 return dataset
-        return None
+        raise ValueError("Dataset id {} does not exist.".format(dataset_id))
 
     def set_labels_dict(self, labels_dict):
-        # TODO: need to validate labels
-        # TODO: can labels come from different label groups?
-        # TODO: future: user defined labels transformations
 
         self.classes_dict = self._create_classes_dict(labels_dict)
 
         for dataset in self.datasets:
             dataset.classes_dict = self.classes_dict
+
+    def get_label_id_annotation_mode(self, label_id):
+        "Return label id's annotation mode."
+        for label_group in self.label_groups:
+            labels_data = label_group.get_data()["labels"]
+            for label in labels_data:
+                if label["id"] == label_id:
+                    return label["annotationMode"]
+        raise ValueError("Label id {} does not exist.".format(label_id))
+
+    def get_label_id_type(self, label_id):
+        "Return label id's type."
+        for label_group in self.label_groups:
+            labels_data = label_group.get_data()["labels"]
+            for label in labels_data:
+                if label["id"] == label_id:
+                    return label["type"]
+        raise ValueError("Label id {} does not exist.".format(label_id))
+
+    def get_label_id_scope(self, label_id):
+        "Return label id's scope."
+        for label_group in self.label_groups:
+            labels_data = label_group.get_data()["labels"]
+            for label in labels_data:
+                if label["id"] == label_id:
+                    return label["scope"]
+        raise ValueError("Label id {} does not exist.".format(label_id))
 
     def _create_classes_dict(self, labels_dict):
         """Create a dict with label id as key, and a nested dict of class_id, and class_text as \
@@ -107,7 +133,10 @@ class Project:
             classes dict
         """
 
+        # validate labels
+        # make sure labels exist
         classes_dict = {}
+
         for label_id, class_id in labels_dict.items():
             for label_group in self.label_groups:
                 labels_data = label_group.get_data()["labels"]
@@ -118,6 +147,12 @@ class Project:
                                 "{} is a local type, its class id cannot be 0.".format(label_id)
                             )
                         classes_dict[label_id] = {"class_id": class_id, "class_text": label["name"]}
+
+        if classes_dict.keys() != labels_dict.keys():
+            in_labels = labels_dict.keys()
+            out_labels = classes_dict.keys()
+            diff = set(in_labels).symmetric_difference(out_labels)
+            raise ValueError("Labels {} are not valid for this dataset.".format(diff))
 
         return classes_dict
 
@@ -227,8 +262,14 @@ class Dataset:
         Returns:
             A unique image identifier based on the DICOM file structure.
         """
+
+        # all image ids
+        image_ids = glob.glob(os.path.join(self.images_dir, "**/*.dcm"), recursive=True)
+
         uid = None
-        try:
+
+        if "StudyInstanceUID" and "SeriesInstanceUID" and "SOPInstanceUID" in ann:
+            # SOP aka image level
             uid = (
                 os.path.join(
                     self.images_dir,
@@ -238,10 +279,22 @@ class Dataset:
                 )
                 + ".dcm"
             )
-        except Exception as error:
-            print("Exception:", error)
-            print("ann %s" % ann)
-        return uid
+            return uid
+        elif "StudyInstanceUID" and "SeriesInstanceUID" in ann:
+            prefix = os.path.join(
+                self.images_dir, ann["StudyInstanceUID"], ann["SeriesInstanceUID"]
+            )
+
+            uid = [image_id for image_id in image_ids if image_id.startswith(prefix)]
+            return uid
+
+        elif "StudyInstanceUID" in ann:
+            prefix = os.path.join(self.images_dir, ann["StudyInstanceUID"])
+            uid = [image_id for image_id in image_ids if image_id.startswith(prefix)]
+            return uid
+
+        else:
+            raise ValueError("Unable to create UID from {}".format(ann))
 
     def get_image_ids(self, verbose=False):
         """Returns image ids. Must call prepare() method first in order to generate image ids.
@@ -261,7 +314,7 @@ class Dataset:
             )
         return self.image_ids
 
-    def _generate_image_ids(self, ann):
+    def _generate_image_ids(self, anns):
         """Get images ids for annotations.
 
         Args:
@@ -272,10 +325,17 @@ class Dataset:
             A list of image ids.
         """
         image_ids = set()
-        for a in ann:
-            uid = self._generate_uid(a)
+        for ann in anns:
+            uid = self._generate_uid(ann)
+
             if uid:
-                image_ids.add(uid)
+                if isinstance(uid, list):
+                    for one_uid in uid:
+                        image_ids.add(one_uid)
+                else:
+                    image_ids.add(uid)
+
+        # image_ids = glob.glob(os.path.join(self.images_dir, "**/*.dcm"), recursive=True)
         return list(image_ids)
 
     def _associate_images_and_annotations(self, anns):
@@ -295,9 +355,15 @@ class Dataset:
         imgs_anns_dict = collections.OrderedDict()
         imgs_anns_dict = {fp: [] for fp in self.image_ids}
 
-        for a in anns:
-            uid = self._generate_uid(a)
-            imgs_anns_dict[uid].append(a)
+        for ann in anns:
+            uid = self._generate_uid(ann)
+            if uid:
+                if isinstance(uid, list):
+                    for one_uid in uid:
+                        imgs_anns_dict[one_uid].append(ann)
+                else:
+                    imgs_anns_dict[uid].append(ann)
+
         return imgs_anns_dict
 
     def class_id_to_class_text(self, class_id):
