@@ -8,10 +8,6 @@ def hex2rgb(h):
     return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4))
 
 
-def combine_datasets(datasets):
-    print("combine_datasets not yet implemented.")
-
-
 def train_test_split(dataset, shuffle=True, validation_split=0.1):
     """
     Split image ids into training and validation sets.

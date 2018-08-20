@@ -146,7 +146,11 @@ class Project:
                             raise Exception(
                                 "{} is a local type, its class id cannot be 0.".format(label_id)
                             )
-                        classes_dict[label_id] = {"class_id": class_id, "class_text": label["name"]}
+                        classes_dict[label_id] = {
+                            "class_id": class_id,
+                            "class_text": label["name"],
+                            "class_annotation_mode": label["annotationMode"],
+                        }
 
         if classes_dict.keys() != labels_dict.keys():
             in_labels = labels_dict.keys()
@@ -286,11 +290,14 @@ class Dataset:
             )
 
             uid = [image_id for image_id in image_ids if image_id.startswith(prefix)]
+            # print("SeriesInstanceUID {}, uid {}".format(ann["SeriesInstanceUID"], uid))
             return uid
 
         elif "StudyInstanceUID" in ann:
             prefix = os.path.join(self.images_dir, ann["StudyInstanceUID"])
             uid = [image_id for image_id in image_ids if image_id.startswith(prefix)]
+
+            # print("StudyInstanceUID {}, uid {}".format(ann["StudyInstanceUID"], uid))
             return uid
 
         else:
@@ -338,6 +345,12 @@ class Dataset:
         # image_ids = glob.glob(os.path.join(self.images_dir, "**/*.dcm"), recursive=True)
         return list(image_ids)
 
+    def get_annotations_by_image_id(self, image_id):
+        if image_id not in self.image_ids:
+            raise ValueError("Image id {} is not found in dataset {}.".format(image_id, self.name))
+
+        return self.imgs_anns_dict[image_id]
+
     def _associate_images_and_annotations(self, anns):
         """Generate image ids to annotations mapping.
         Each image can have zero or more annotations.
@@ -383,6 +396,12 @@ class Dataset:
         for k, v in self.classes_dict.items():
             if k == label_id:
                 return v["class_id"]
+        raise Exception("label_id {} is invalid.".format(label_id))
+
+    def label_id_to_class_annotation_mode(self, label_id):
+        for k, v in self.classes_dict.items():
+            if k == label_id:
+                return v["class_annotation_mode"]
         raise Exception("label_id {} is invalid.".format(label_id))
 
     def show_classes(self):

@@ -11,12 +11,6 @@ import matplotlib.pyplot as plt
 from matplotlib import patches, lines
 from matplotlib.patches import Polygon
 
-# import IPython.display
-
-# TODO: put CONFIG VALUES in config.py
-ORIG_HEIGHT = 1024
-ORIG_WIDTH = 1024
-
 
 def random_colors(N, bright=True):
     """ Generate random colors.
@@ -41,7 +35,7 @@ def display_images(image_ids, titles=None, cols=3, cmap=None, norm=None, interpo
         image_ids (list):
             List of image ids.
 
-    TODO: figsize should not be hardcoded.
+    TODO: figsize should not be hardcoded
     """
     titles = titles if titles is not None else [""] * len(image_ids)
     rows = len(image_ids) // cols + 1
@@ -85,49 +79,73 @@ def load_dicom_image(image_id, to_RGB=False):
     return image
 
 
-def load_mask(imgs_anns, image_id, label_ids_dict):
+def load_mask(image_id, dataset):
     """Load instance masks for the given image. Masks can be different types,
     mask is a binary true/false map of the same size as the image.
 
-    TODO: Need to handle loading for Free Form, Line, Polygon, Bounding Box and Thresholded Box.
     """
-    annotations = imgs_anns[image_id]
+    # annotations = imgs_anns[image_id]
+    annotations = dataset.get_annotations_by_image_id(image_id)
     count = len(annotations)
     print("Number of annotations: %d" % count)
 
-    # TODO: mask should use image size (use ORIG_HEIGHT/WIDTH set in config file?)
+    image = load_dicom_image(image_id)
+    width = image.shape[1]
+    height = image.shape[0]
+
     if count == 0:
         print("No annotations")
-        mask = np.zeros((ORIG_HEIGHT, ORIG_WIDTH, 1), dtype=np.uint8)
+        mask = np.zeros((height, width, 1), dtype=np.uint8)
         class_ids = np.zeros((1,), dtype=np.int32)
     else:
-        mask = np.zeros((ORIG_HEIGHT, ORIG_WIDTH, count), dtype=np.uint8)
+        mask = np.zeros((height, width, count), dtype=np.uint8)
         class_ids = np.zeros((count,), dtype=np.int32)
 
         for i, a in enumerate(annotations):
 
-            # TODO: select by annotation mode (bbox, polygon, freeform, etc)
+            label_id = a["labelId"]
+            annotation_mode = dataset.label_id_to_class_annotation_mode(label_id)
+            print(annotation_mode)
 
-            # Bounding Box
-            x = int(a["data"]["x"])
-            y = int(a["data"]["y"])
-            w = int(a["data"]["width"])
-            h = int(a["data"]["height"])
-            mask_instance = mask[:, :, i].copy()
-            cv2.rectangle(mask_instance, (x, y), (x + w, y + h), 255, -1)
-            mask[:, :, i] = mask_instance
+            if annotation_mode == "bbox":
+                # Bounding Box
+                x = int(a["data"]["x"])
+                y = int(a["data"]["y"])
+                w = int(a["data"]["width"])
+                h = int(a["data"]["height"])
+                mask_instance = mask[:, :, i].copy()
+                cv2.rectangle(mask_instance, (x, y), (x + w, y + h), 255, -1)
+                mask[:, :, i] = mask_instance
 
-            # FreeForm
+            # FreeForm or Polygon
+            elif annotation_mode == "freeform" or annotation_mode == "polygon":
+                vertices = np.array(a["data"]["vertices"])
+                vertices = vertices.reshape((-1, 2))
+                mask_instance = mask[:, :, i].copy()
+                cv2.fillPoly(mask_instance, np.int32([vertices]), (255, 255, 255))
+                mask[:, :, i] = mask_instance
 
             # Line
+            elif annotation_mode == "line":
+                vertices = np.array(a["data"]["vertices"])
+                vertices = vertices.reshape((-1, 2))
+                mask_instance = mask[:, :, i].copy()
+                cv2.polylines(mask_instance, np.int32([vertices]), False, (255, 255, 255), 12)
+                mask[:, :, i] = mask_instance
 
-            # Polygon
+            elif annotation_mode == "location":
+                # Bounding Box
+                x = int(a["data"]["x"])
+                y = int(a["data"]["y"])
+                mask_instance = mask[:, :, i].copy()
+                cv2.circle(mask_instance, (x, y), 7, (255, 255, 255), -1)
+                mask[:, :, i] = mask_instance
 
-            # Thresholded Box (defer for now)
+            elif annotation_mode is None:
+                print("Not a local instance")
 
             # load class id
-            if a["labelId"] in label_ids_dict:
-                class_ids[i] = label_ids_dict[a["labelId"]]["class_id"]
+            class_ids[i] = dataset.label_id_to_class_id(label_id)
 
     return mask.astype(np.bool), class_ids.astype(np.int32)
 
@@ -178,12 +196,10 @@ def extract_bboxes(mask):
     return boxes.astype(np.int32)
 
 
-def get_image_ground_truth(imgs_anns, image_id, label_ids):
+def get_image_ground_truth(image_id, dataset):
     """Load and return ground truth data for an image (image, mask, bounding boxes).
 
     Args:
-        imgs_anns:
-            Dict of images and associated annotations.
         image_id:
             Image id.
 
@@ -201,15 +217,10 @@ def get_image_ground_truth(imgs_anns, image_id, label_ids):
             [height, width, instance_count]. The height and width are those of the image unless
         use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.
     """
-
-    # TODO: auto-detect image type?
     image = load_dicom_image(image_id, to_RGB=True)
 
-    mask, class_ids = load_mask(imgs_anns, image_id, label_ids)
+    mask, class_ids = load_mask(image_id, dataset)
 
-    original_shape = image.shape
-
-    # TODO: need to resize image, mask?
     _idx = np.sum(mask, axis=(0, 1)) > 0
     mask = mask[:, :, _idx]
     class_ids = class_ids[_idx]
@@ -227,7 +238,6 @@ def display_annotations(
     boxes,
     masks,
     class_ids,
-    class_names,
     scores=None,
     title="",
     figsize=(16, 16),
@@ -246,8 +256,6 @@ def display_annotations(
             [height, width, num_instances]
         class_ids:
             [num_instances]
-        class_names:
-            list of class names of the dataset
         scores:
             (optional) confidence scores for each box
         title:
@@ -312,8 +320,7 @@ def display_annotations(
             class_id = class_ids[i]
             score = scores[i] if scores is not None else None
 
-            # BUG: THIS IS A HACK! THIS IS BECAUSE class_id does not start from zero!
-            label = class_names[class_id - 1]
+            label = class_id
             x = random.randint(x1, (x1 + x2) // 2)
             caption = "{} {:.3f}".format(label, score) if score else label
         else:
