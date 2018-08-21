@@ -1,0 +1,427 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mdai.client &#8212; mdai-client-py  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mdai.client</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">urllib3.exceptions</span>
+<span class="kn">from</span> <span class="nn">retrying</span> <span class="k">import</span> <span class="n">retry</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="nn">arrow</span>
+<span class="kn">from</span> <span class="nn">.preprocess</span> <span class="k">import</span> <span class="n">Project</span>
+
+
+<div class="viewcode-block" id="retry_on_http_error"><a class="viewcode-back" href="../../mdai.html#mdai.client.retry_on_http_error">[docs]</a><span class="k">def</span> <span class="nf">retry_on_http_error</span><span class="p">(</span><span class="n">exception</span><span class="p">):</span>
+    <span class="n">valid_exceptions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">,</span>
+        <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConnectionError</span><span class="p">,</span>
+        <span class="n">urllib3</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">exception</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">valid_exceptions</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="Client"><a class="viewcode-back" href="../../mdai.html#mdai.client.Client">[docs]</a><span class="k">class</span> <span class="nc">Client</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Client for communicating with MD.ai backend API.</span>
+<span class="sd">    Communication is via user access tokens (in MD.ai Hub, Settings -&gt; User Access Tokens).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="s2">&quot;public.md.ai&quot;</span><span class="p">,</span> <span class="n">access_token</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">domain</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s2">&quot;.md.ai&quot;</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;domain </span><span class="si">{}</span><span class="s2"> is invalid: should be format *.md.ai&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span> <span class="o">=</span> <span class="n">access_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_test_endpoint</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Client.project"><a class="viewcode-back" href="../../mdai.html#mdai.client.Client.project">[docs]</a>    <span class="k">def</span> <span class="nf">project</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">project_id</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">force_download</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes Project class given project id.</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            project_id: hash ID of project.</span>
+<span class="sd">            path: directory used for data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using working directory for data.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using path &#39;</span><span class="si">{}</span><span class="s2">&#39; for data.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+
+        <span class="n">data_manager_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span>
+            <span class="s2">&quot;project_id&quot;</span><span class="p">:</span> <span class="n">project_id</span><span class="p">,</span>
+            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
+            <span class="s2">&quot;session&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span>
+            <span class="s2">&quot;headers&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_headers</span><span class="p">(),</span>
+        <span class="p">}</span>
+        <span class="n">annotations_data_manager</span> <span class="o">=</span> <span class="n">ProjectDataManager</span><span class="p">(</span>
+            <span class="s2">&quot;annotations&quot;</span><span class="p">,</span> <span class="n">force_download</span><span class="p">,</span> <span class="o">**</span><span class="n">data_manager_kwargs</span>
+        <span class="p">)</span>
+        <span class="n">images_data_manager</span> <span class="o">=</span> <span class="n">ProjectDataManager</span><span class="p">(</span><span class="s2">&quot;images&quot;</span><span class="p">,</span> <span class="n">force_download</span><span class="p">,</span> <span class="o">**</span><span class="n">data_manager_kwargs</span><span class="p">)</span>
+
+        <span class="n">annotations_data_manager</span><span class="o">.</span><span class="n">create_data_export_job</span><span class="p">()</span>
+        <span class="n">images_data_manager</span><span class="o">.</span><span class="n">create_data_export_job</span><span class="p">()</span>
+
+        <span class="n">annotations_data_manager</span><span class="o">.</span><span class="n">wait_until_ready</span><span class="p">()</span>
+        <span class="n">images_data_manager</span><span class="o">.</span><span class="n">wait_until_ready</span><span class="p">()</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="n">Project</span><span class="p">(</span>
+            <span class="n">annotations_fp</span><span class="o">=</span><span class="n">annotations_data_manager</span><span class="o">.</span><span class="n">data_path</span><span class="p">,</span>
+            <span class="n">images_dir</span><span class="o">=</span><span class="n">images_data_manager</span><span class="o">.</span><span class="n">data_path</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">p</span></div>
+
+    <span class="k">def</span> <span class="nf">_create_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="p">:</span>
+            <span class="n">headers</span><span class="p">[</span><span class="s2">&quot;x-access-token&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span>
+        <span class="k">return</span> <span class="n">headers</span>
+
+    <span class="k">def</span> <span class="nf">_test_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks endpoint for validity and authorization.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">test_endpoint</span> <span class="o">=</span> <span class="s2">&quot;https://</span><span class="si">{}</span><span class="s2">/api/test&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">test_endpoint</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_headers</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Successfully authenticated to </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Authorization error. Make sure your access token is valid.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@retry</span><span class="p">(</span>
+        <span class="n">retry_on_exception</span><span class="o">=</span><span class="n">retry_on_http_error</span><span class="p">,</span>
+        <span class="n">wait_exponential_multiplier</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">wait_exponential_max</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">stop_max_attempt_number</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_gql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Executes GraphQL query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">gql_endpoint</span> <span class="o">=</span> <span class="s2">&quot;https://</span><span class="si">{}</span><span class="s2">/api/graphql&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">)</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_headers</span><span class="p">()</span>
+        <span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Accept&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;application/json&quot;</span>
+        <span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;application/json&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">,</span> <span class="s2">&quot;variables&quot;</span><span class="p">:</span> <span class="n">variables</span><span class="p">}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">gql_endpoint</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+
+        <span class="n">body</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">body</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;data&quot;</span> <span class="ow">in</span> <span class="n">body</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="n">body</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;errors&quot;</span> <span class="ow">in</span> <span class="n">body</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">errors</span></div>
+
+
+<div class="viewcode-block" id="ProjectDataManager"><a class="viewcode-back" href="../../mdai.html#mdai.client.ProjectDataManager">[docs]</a><span class="k">class</span> <span class="nc">ProjectDataManager</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Manager for project data exports and downloads.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="nb">type</span><span class="p">,</span>
+        <span class="n">force_download</span><span class="p">,</span>
+        <span class="n">domain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">project_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">path</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span>
+        <span class="n">session</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="nb">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">,</span> <span class="s2">&quot;annotations&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;type must be &#39;images&#39; or &#39;annotations&#39;.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">domain</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;domain is not specified.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">project_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;project_id is not specified.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="s2">&quot;Path &#39;</span><span class="si">{}</span><span class="s2">&#39; does not exist.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">force_download</span> <span class="o">=</span> <span class="n">force_download</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span> <span class="o">=</span> <span class="n">project_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="k">if</span> <span class="n">session</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span>
+
+        <span class="c1"># path for downloaded data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># ready threading event</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ready</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ProjectDataManager.create_data_export_job"><a class="viewcode-back" href="../../mdai.html#mdai.client.ProjectDataManager.create_data_export_job">[docs]</a>    <span class="k">def</span> <span class="nf">create_data_export_job</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create data export job through MD.ai API.</span>
+<span class="sd">        This is an async operation. Status code of 202 indicates successful creation of job.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="s2">&quot;https://</span><span class="si">{}</span><span class="s2">/api/data-export/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_data_export_params</span><span class="p">()</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">202</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Preparing </span><span class="si">{}</span><span class="s2"> export for project </span><span class="si">{}</span><span class="s2">...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_data_export_job_progress</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">401</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;Project </span><span class="si">{}</span><span class="s2"> at domain </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="s2">&quot; does not exist or you do not have sufficient permissions for access.&quot;</span>
+                <span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_on_data_export_job_error</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ProjectDataManager.wait_until_ready"><a class="viewcode-back" href="../../mdai.html#mdai.client.ProjectDataManager.wait_until_ready">[docs]</a>    <span class="k">def</span> <span class="nf">wait_until_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ready</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_data_export_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;images&quot;</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;projectHashId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span> <span class="s2">&quot;exportFormat&quot;</span><span class="p">:</span> <span class="s2">&quot;zip&quot;</span><span class="p">}</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;annotations&quot;</span><span class="p">:</span>
+            <span class="c1"># TODO: restrict to assigned labelgroup</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;projectHashId&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span>
+                <span class="s2">&quot;labelGroupNum&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s2">&quot;exportFormat&quot;</span><span class="p">:</span> <span class="s2">&quot;json&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">_check_data_export_job_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Poll for data export job progress.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="s2">&quot;https://</span><span class="si">{}</span><span class="s2">/api/data-export/</span><span class="si">{}</span><span class="s2">/progress&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_data_export_params</span><span class="p">()</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">body</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="n">body</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_on_data_export_job_error</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;running&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">progress</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">body</span><span class="p">[</span><span class="s2">&quot;progress&quot;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="n">progress</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">time_remaining</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">body</span><span class="p">[</span><span class="s2">&quot;timeRemaining&quot;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="n">time_remaining</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="c1"># print formatted progress info</span>
+            <span class="k">if</span> <span class="n">progress</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">progress</span> <span class="o">&lt;=</span> <span class="mi">100</span> <span class="ow">and</span> <span class="n">time_remaining</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">time_remaining</span> <span class="o">&gt;</span> <span class="mi">45</span><span class="p">:</span>
+                    <span class="n">time_remaining_fmt</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">arrow</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">time_remaining</span><span class="p">)</span><span class="o">.</span><span class="n">humanize</span><span class="p">(</span><span class="n">only_distance</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># arrow humanizes &lt;= 45 to &#39;in seconds&#39; or &#39;just now&#39;,</span>
+                    <span class="c1"># so we will opt to be explicit instead.</span>
+                    <span class="n">time_remaining_fmt</span> <span class="o">=</span> <span class="s2">&quot;in </span><span class="si">{}</span><span class="s2"> seconds&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_remaining</span><span class="p">)</span>
+                <span class="n">end_char</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">progress</span> <span class="o">&lt;</span> <span class="mi">100</span> <span class="k">else</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Exporting </span><span class="si">{}</span><span class="s2"> for project </span><span class="si">{}</span><span class="s2">...</span><span class="si">{}</span><span class="s2">% (time remaining: </span><span class="si">{}</span><span class="s2">).&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">time_remaining_fmt</span>
+                <span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="n">end_char</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="c1"># run progress check at 1s intervals so long as status == &#39;running&#39; and progress &lt; 100</span>
+            <span class="k">if</span> <span class="n">progress</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_data_export_job_progress</span><span class="p">)</span>
+                <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;done&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_on_data_export_job_done</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_on_data_export_job_error</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_on_data_export_job_done</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="s2">&quot;https://</span><span class="si">{}</span><span class="s2">/api/data-export/</span><span class="si">{}</span><span class="s2">/done&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_data_export_params</span><span class="p">()</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">file_key</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;fileKey&quot;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">file_key</span><span class="p">:</span>
+
+                <span class="c1"># check cached file</span>
+                <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">file_key</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;images&quot;</span><span class="p">:</span>
+                    <span class="n">data_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filepath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;annotations&quot;</span><span class="p">:</span>
+                    <span class="n">data_path</span> <span class="o">=</span> <span class="n">filepath</span>
+
+                <span class="c1"># if file has been downloaded previously</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_download</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">data_path</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;images&quot;</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">data_path</span><span class="p">):</span>
+                                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extracting archive: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_key</span><span class="p">))</span>
+                                <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                                    <span class="n">f</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span> <span class="o">=</span> <span class="n">data_path</span>
+                        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;annotations&quot;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span> <span class="o">=</span> <span class="n">data_path</span>
+
+                        <span class="c1"># fire ready threading.Event</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_ready</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+                        <span class="nb">print</span><span class="p">(</span>
+                            <span class="s2">&quot;Using cached </span><span class="si">{}</span><span class="s2"> data for project </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># download in separate thread</span>
+                        <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_download_file</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">file_key</span><span class="p">,))</span>
+                        <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># download in separate thread</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_download_file</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">file_key</span><span class="p">,))</span>
+                    <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_on_data_export_job_error</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">project_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_on_data_export_job_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="s2">&quot;https://</span><span class="si">{}</span><span class="s2">/api/data-export/</span><span class="si">{}</span><span class="s2">/error&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_data_export_params</span><span class="p">()</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error exporting </span><span class="si">{}</span><span class="s2"> for project </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_download_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Downloads file via signed URL requested from MD.ai API.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downloading file: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_key</span><span class="p">))</span>
+        <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">file_key</span><span class="p">)</span>
+
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://</span><span class="si">{}</span><span class="s2">/api/project-files/signedurl/get?key=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="n">requests</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="n">file_key</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># stream response so we can display progress bar</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">)</span>
+
+        <span class="c1"># total size in bytes</span>
+        <span class="n">total_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content-length&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">block_size</span> <span class="o">=</span> <span class="mi">32</span> <span class="o">*</span> <span class="mi">1024</span>
+        <span class="n">wrote</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">total_size</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="n">unit_scale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unit_divisor</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span> <span class="k">as</span> <span class="n">pbar</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="n">block_size</span><span class="p">):</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                    <span class="n">wrote</span> <span class="o">=</span> <span class="n">wrote</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                    <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">block_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">total_size</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">wrote</span> <span class="o">!=</span> <span class="n">total_size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Error downloading file </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_key</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;images&quot;</span><span class="p">:</span>
+            <span class="c1"># unzip archive</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extracting archive: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_key</span><span class="p">))</span>
+            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="c1"># images directory should have same name as archive file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filepath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;annotations&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_path</span> <span class="o">=</span> <span class="n">filepath</span>
+
+        <span class="c1"># fire ready threading.Event</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ready</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Success: </span><span class="si">{}</span><span class="s2"> data for project </span><span class="si">{}</span><span class="s2"> ready.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project_id</span><span class="p">))</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">mdai-client-py</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018 md.ai.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

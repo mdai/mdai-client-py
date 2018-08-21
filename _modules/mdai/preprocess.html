@@ -1,0 +1,506 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mdai.preprocess &#8212; mdai-client-py  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mdai.preprocess</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pydicom</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+
+
+<div class="viewcode-block" id="Project"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project">[docs]</a><span class="k">class</span> <span class="nc">Project</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Project consists of label groups, and datasets.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        annotations_fp (str):</span>
+<span class="sd">            File path to the exported JSON annotation file.</span>
+<span class="sd">        images_dir (str):</span>
+<span class="sd">            File path to the DICOM images directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotations_fp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">images_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annotations_fp</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">images_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_groups</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datasets</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">annotations_fp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">images_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">annotations_fp</span> <span class="o">=</span> <span class="n">annotations_fp</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">images_dir</span> <span class="o">=</span> <span class="n">images_dir</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotations_fp</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;datasets&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">images_dir</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">label_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;labelGroups&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">label_groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LabelGroup</span><span class="p">(</span><span class="n">label_group</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error: Missing data or images file paths!&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Project.get_label_groups"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.get_label_groups">[docs]</a>    <span class="k">def</span> <span class="nf">get_label_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_groups</span></div>
+
+<div class="viewcode-block" id="Project.show_label_groups"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.show_label_groups">[docs]</a>    <span class="k">def</span> <span class="nf">show_label_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">label_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_groups</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Label Group, Id: </span><span class="si">%s</span><span class="s2">, Name: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">label_group</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">label_group</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+            <span class="n">label_group</span><span class="o">.</span><span class="n">show_labels</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Project.get_label_group_by_name"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.get_label_group_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_label_group_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_group_name</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">label_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_groups</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">label_group</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">label_group_name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">label_group</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Project.get_label_group_by_id"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.get_label_group_by_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_label_group_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_group_id</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">label_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_groups</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">label_group</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">label_group_id</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">label_group</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Project.get_datasets"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.get_datasets">[docs]</a>    <span class="k">def</span> <span class="nf">get_datasets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get JSON representation of datasets&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasets</span></div>
+
+<div class="viewcode-block" id="Project.show_datasets"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.show_datasets">[docs]</a>    <span class="k">def</span> <span class="nf">show_datasets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Datasets:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasets</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Id: </span><span class="si">%s</span><span class="s2">, Name: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">dataset</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Project.get_dataset_by_name"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.get_dataset_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_dataset_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasets</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dataset</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">dataset_name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dataset</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Dataset name </span><span class="si">{}</span><span class="s2"> does not exist.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Project.get_dataset_by_id"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.get_dataset_by_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_dataset_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasets</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dataset</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">dataset_id</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dataset</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Dataset id </span><span class="si">{}</span><span class="s2"> does not exist.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Project.set_labels_dict"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.set_labels_dict">[docs]</a>    <span class="k">def</span> <span class="nf">set_labels_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels_dict</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_classes_dict</span><span class="p">(</span><span class="n">labels_dict</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasets</span><span class="p">:</span>
+            <span class="n">dataset</span><span class="o">.</span><span class="n">classes_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span></div>
+
+<div class="viewcode-block" id="Project.get_label_id_annotation_mode"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.get_label_id_annotation_mode">[docs]</a>    <span class="k">def</span> <span class="nf">get_label_id_annotation_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_id</span><span class="p">):</span>
+        <span class="s2">&quot;Return label id&#39;s annotation mode.&quot;</span>
+        <span class="k">for</span> <span class="n">label_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_groups</span><span class="p">:</span>
+            <span class="n">labels_data</span> <span class="o">=</span> <span class="n">label_group</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels_data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">label_id</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;annotationMode&quot;</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Label id </span><span class="si">{}</span><span class="s2"> does not exist.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label_id</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Project.get_label_id_type"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.get_label_id_type">[docs]</a>    <span class="k">def</span> <span class="nf">get_label_id_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_id</span><span class="p">):</span>
+        <span class="s2">&quot;Return label id&#39;s type.&quot;</span>
+        <span class="k">for</span> <span class="n">label_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_groups</span><span class="p">:</span>
+            <span class="n">labels_data</span> <span class="o">=</span> <span class="n">label_group</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels_data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">label_id</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Label id </span><span class="si">{}</span><span class="s2"> does not exist.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label_id</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Project.get_label_id_scope"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Project.get_label_id_scope">[docs]</a>    <span class="k">def</span> <span class="nf">get_label_id_scope</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_id</span><span class="p">):</span>
+        <span class="s2">&quot;Return label id&#39;s scope.&quot;</span>
+        <span class="k">for</span> <span class="n">label_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_groups</span><span class="p">:</span>
+            <span class="n">labels_data</span> <span class="o">=</span> <span class="n">label_group</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels_data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">label_id</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;scope&quot;</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Label id </span><span class="si">{}</span><span class="s2"> does not exist.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label_id</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">_create_classes_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a dict with label id as key, and a nested dict of class_id, and class_text as \</span>
+<span class="sd">        values, e.g., {&#39;L_v8n&#39;: {&#39;class_id&#39;: 1, &#39;class_text&#39;: &#39;Lung Opacity&#39;}}, where L_v8n is \</span>
+<span class="sd">        the label id, with a class_id of 1 and class text of &#39;Lung Opacity&#39;.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            labels_dict:</span>
+<span class="sd">                dictionary containing label ids, and (user defined) class ids</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            classes dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># validate labels</span>
+        <span class="c1"># make sure labels exist</span>
+        <span class="n">classes_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">label_id</span><span class="p">,</span> <span class="n">class_id</span> <span class="ow">in</span> <span class="n">labels_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">label_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_groups</span><span class="p">:</span>
+                <span class="n">labels_data</span> <span class="o">=</span> <span class="n">label_group</span><span class="o">.</span><span class="n">get_data</span><span class="p">()[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels_data</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">label_id</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">class_id</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                                <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> is a local type, its class id cannot be 0.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label_id</span><span class="p">)</span>
+                            <span class="p">)</span>
+                        <span class="n">classes_dict</span><span class="p">[</span><span class="n">label_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;class_id&quot;</span><span class="p">:</span> <span class="n">class_id</span><span class="p">,</span>
+                            <span class="s2">&quot;class_text&quot;</span><span class="p">:</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                            <span class="s2">&quot;class_annotation_mode&quot;</span><span class="p">:</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;annotationMode&quot;</span><span class="p">],</span>
+                        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">classes_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">!=</span> <span class="n">labels_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">in_labels</span> <span class="o">=</span> <span class="n">labels_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="n">out_labels</span> <span class="o">=</span> <span class="n">classes_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">in_labels</span><span class="p">)</span><span class="o">.</span><span class="n">symmetric_difference</span><span class="p">(</span><span class="n">out_labels</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Labels </span><span class="si">{}</span><span class="s2"> are not valid for this dataset.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">diff</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">classes_dict</span></div>
+
+
+<div class="viewcode-block" id="LabelGroup"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.LabelGroup">[docs]</a><span class="k">class</span> <span class="nc">LabelGroup</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A label group contains multiple labels.</span>
+<span class="sd">    Each label has properties such id, name, color, type, scope, annotation mode, rad lex tag ids.</span>
+
+<span class="sd">    Label type:</span>
+<span class="sd">        Global typed annotations apply to the whole instance (e.g., a CT image), while</span>
+<span class="sd">        local typed annotations apply to a part of the image (e.g., ROI bounding box).</span>
+<span class="sd">    Label scope:</span>
+<span class="sd">        Scope can be of study, series, or instance.</span>
+<span class="sd">    Label annotation mode:</span>
+<span class="sd">        Annotation mode can be of bounding boxes, free form, polygon, etc.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_group_data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            label_group (object: json) JSON data for label group</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_group_data</span> <span class="o">=</span> <span class="n">label_group_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_group_data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_group_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="LabelGroup.get_data"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.LabelGroup.get_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_group_data</span></div>
+
+<div class="viewcode-block" id="LabelGroup.get_labels"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.LabelGroup.get_labels">[docs]</a>    <span class="k">def</span> <span class="nf">get_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get label ids and names &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">label</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_group_data</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]]</span></div>
+
+<div class="viewcode-block" id="LabelGroup.show_labels"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.LabelGroup.show_labels">[docs]</a>    <span class="k">def</span> <span class="nf">show_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">print_offset</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Show labels info&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">Labels:&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">print_offset</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_group_data</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">Id: </span><span class="si">{}</span><span class="s2">, Name: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">print_offset</span><span class="p">,</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">label</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Dataset"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Dataset">[docs]</a><span class="k">class</span> <span class="nc">Dataset</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A dataset consists of DICOM images and annotations.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        dataset_data:</span>
+<span class="sd">            Dataset json data.</span>
+<span class="sd">        images_dir:</span>
+<span class="sd">            DICOM images directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_data</span><span class="p">,</span> <span class="n">images_dir</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_data</span> <span class="o">=</span> <span class="n">dataset_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">images_dir</span> <span class="o">=</span> <span class="n">images_dir</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">dataset_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">dataset_data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_annotations</span> <span class="o">=</span> <span class="n">dataset_data</span><span class="p">[</span><span class="s2">&quot;annotations&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_ids</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imgs_anns_dict</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Dataset.prepare"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Dataset.prepare">[docs]</a>    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Use `Project.set_labels_dict()` to set labels.&quot;</span><span class="p">)</span>
+
+        <span class="n">label_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+        <span class="c1"># filter annotations by label ids</span>
+        <span class="n">ann_filtered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_annotations</span><span class="p">(</span><span class="n">label_ids</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">imgs_anns_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_associate_images_and_annotations</span><span class="p">(</span><span class="n">ann_filtered</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Dataset.get_annotations"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Dataset.get_annotations">[docs]</a>    <span class="k">def</span> <span class="nf">get_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns annotations, filtered by label ids.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            label_ids (optional):</span>
+<span class="sd">                Filter returned annotations by matching label ids.</span>
+
+<span class="sd">            verbose (optional:</span>
+<span class="sd">                Print debug messages.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">label_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Dataset contains </span><span class="si">%d</span><span class="s2"> annotations.&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_annotations</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_annotations</span>
+
+        <span class="n">ann_filtered</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_annotations</span> <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;labelId&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">label_ids</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;Dataset contains </span><span class="si">{}</span><span class="s2"> annotations, filtered by label ids </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">ann_filtered</span><span class="p">),</span> <span class="n">label_ids</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ann_filtered</span></div>
+
+    <span class="k">def</span> <span class="nf">_generate_uid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ann</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate an unique image identifier based on the DICOM file structure.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ann (list):</span>
+<span class="sd">                List of annotations.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A unique image identifier based on the DICOM file structure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># all image ids</span>
+        <span class="n">image_ids</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images_dir</span><span class="p">,</span> <span class="s2">&quot;**/*.dcm&quot;</span><span class="p">),</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">uid</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s2">&quot;StudyInstanceUID&quot;</span> <span class="ow">and</span> <span class="s2">&quot;SeriesInstanceUID&quot;</span> <span class="ow">and</span> <span class="s2">&quot;SOPInstanceUID&quot;</span> <span class="ow">in</span> <span class="n">ann</span><span class="p">:</span>
+            <span class="c1"># SOP aka image level</span>
+            <span class="n">uid</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">images_dir</span><span class="p">,</span>
+                    <span class="n">ann</span><span class="p">[</span><span class="s2">&quot;StudyInstanceUID&quot;</span><span class="p">],</span>
+                    <span class="n">ann</span><span class="p">[</span><span class="s2">&quot;SeriesInstanceUID&quot;</span><span class="p">],</span>
+                    <span class="n">ann</span><span class="p">[</span><span class="s2">&quot;SOPInstanceUID&quot;</span><span class="p">],</span>
+                <span class="p">)</span>
+                <span class="o">+</span> <span class="s2">&quot;.dcm&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">uid</span>
+        <span class="k">elif</span> <span class="s2">&quot;StudyInstanceUID&quot;</span> <span class="ow">and</span> <span class="s2">&quot;SeriesInstanceUID&quot;</span> <span class="ow">in</span> <span class="n">ann</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">images_dir</span><span class="p">,</span> <span class="n">ann</span><span class="p">[</span><span class="s2">&quot;StudyInstanceUID&quot;</span><span class="p">],</span> <span class="n">ann</span><span class="p">[</span><span class="s2">&quot;SeriesInstanceUID&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="n">uid</span> <span class="o">=</span> <span class="p">[</span><span class="n">image_id</span> <span class="k">for</span> <span class="n">image_id</span> <span class="ow">in</span> <span class="n">image_ids</span> <span class="k">if</span> <span class="n">image_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)]</span>
+            <span class="c1"># print(&quot;SeriesInstanceUID {}, uid {}&quot;.format(ann[&quot;SeriesInstanceUID&quot;], uid))</span>
+            <span class="k">return</span> <span class="n">uid</span>
+
+        <span class="k">elif</span> <span class="s2">&quot;StudyInstanceUID&quot;</span> <span class="ow">in</span> <span class="n">ann</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images_dir</span><span class="p">,</span> <span class="n">ann</span><span class="p">[</span><span class="s2">&quot;StudyInstanceUID&quot;</span><span class="p">])</span>
+            <span class="n">uid</span> <span class="o">=</span> <span class="p">[</span><span class="n">image_id</span> <span class="k">for</span> <span class="n">image_id</span> <span class="ow">in</span> <span class="n">image_ids</span> <span class="k">if</span> <span class="n">image_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)]</span>
+
+            <span class="c1"># print(&quot;StudyInstanceUID {}, uid {}&quot;.format(ann[&quot;StudyInstanceUID&quot;], uid))</span>
+            <span class="k">return</span> <span class="n">uid</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unable to create UID from </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ann</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Dataset.get_image_ids"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Dataset.get_image_ids">[docs]</a>    <span class="k">def</span> <span class="nf">get_image_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns image ids. Must call prepare() method first in order to generate image ids.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            verbose (Optional):</span>
+<span class="sd">                Print debug message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_ids</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Call project.prepare() first.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;Dataset contains </span><span class="si">{}</span><span class="s2"> images, filtered by label ids </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_ids</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_ids</span></div>
+
+    <span class="k">def</span> <span class="nf">_generate_image_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anns</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get images ids for annotations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ann (list):</span>
+<span class="sd">            List of image ids.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of image ids.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">image_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">anns</span><span class="p">:</span>
+            <span class="n">uid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_uid</span><span class="p">(</span><span class="n">ann</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">uid</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uid</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">one_uid</span> <span class="ow">in</span> <span class="n">uid</span><span class="p">:</span>
+                        <span class="n">image_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">one_uid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">image_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">uid</span><span class="p">)</span>
+
+        <span class="c1"># image_ids = glob.glob(os.path.join(self.images_dir, &quot;**/*.dcm&quot;), recursive=True)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">image_ids</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Dataset.get_annotations_by_image_id"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Dataset.get_annotations_by_image_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_annotations_by_image_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_id</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">image_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_ids</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Image id </span><span class="si">{}</span><span class="s2"> is not found in dataset </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">image_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">imgs_anns_dict</span><span class="p">[</span><span class="n">image_id</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">_associate_images_and_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">anns</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate image ids to annotations mapping.</span>
+<span class="sd">        Each image can have zero or more annotations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            anns (list):</span>
+<span class="sd">                List of annotations.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A dictionary with image ids as keys and annotations as values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_image_ids</span><span class="p">(</span><span class="n">anns</span><span class="p">)</span>
+
+        <span class="c1"># empty dictionary with image ids as keys</span>
+        <span class="n">imgs_anns_dict</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">imgs_anns_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">fp</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">fp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_ids</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">anns</span><span class="p">:</span>
+            <span class="n">uid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_uid</span><span class="p">(</span><span class="n">ann</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">uid</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uid</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">one_uid</span> <span class="ow">in</span> <span class="n">uid</span><span class="p">:</span>
+                        <span class="n">imgs_anns_dict</span><span class="p">[</span><span class="n">one_uid</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ann</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">imgs_anns_dict</span><span class="p">[</span><span class="n">uid</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ann</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">imgs_anns_dict</span>
+
+<div class="viewcode-block" id="Dataset.class_id_to_class_text"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Dataset.class_id_to_class_text">[docs]</a>    <span class="k">def</span> <span class="nf">class_id_to_class_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_id</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;class_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">class_id</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;class_text&quot;</span><span class="p">]</span>
+
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;class_id </span><span class="si">{}</span><span class="s2"> is invalid.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">class_id</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Dataset.class_text_to_class_id"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Dataset.class_text_to_class_id">[docs]</a>    <span class="k">def</span> <span class="nf">class_text_to_class_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_text</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;class_text&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">class_text</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;class_id&quot;</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;class_text </span><span class="si">{}</span><span class="s2"> is invalid.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">class_text</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Dataset.label_id_to_class_id"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Dataset.label_id_to_class_id">[docs]</a>    <span class="k">def</span> <span class="nf">label_id_to_class_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_id</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">label_id</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;class_id&quot;</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;label_id </span><span class="si">{}</span><span class="s2"> is invalid.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label_id</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Dataset.label_id_to_class_annotation_mode"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Dataset.label_id_to_class_annotation_mode">[docs]</a>    <span class="k">def</span> <span class="nf">label_id_to_class_annotation_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label_id</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">label_id</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;class_annotation_mode&quot;</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;label_id </span><span class="si">{}</span><span class="s2"> is invalid.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label_id</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Dataset.show_classes"><a class="viewcode-back" href="../../mdai.html#mdai.preprocess.Dataset.show_classes">[docs]</a>    <span class="k">def</span> <span class="nf">show_classes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;Label id: </span><span class="si">{}</span><span class="s2">, Class id: </span><span class="si">{}</span><span class="s2">, Class text: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;class_id&quot;</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;class_text&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">mdai-client-py</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018 md.ai.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
