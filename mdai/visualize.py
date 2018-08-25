@@ -28,7 +28,7 @@ def random_colors(N, bright=True):
 
 
 # based on functions in: https://github.com/matterport/Mask_RCNN/blob/master/mrcnn/visualize.py
-def display_images(image_ids, titles=None, cols=3, cmap=None, norm=None, interpolation=None):
+def display_images(image_ids, titles=None, cols=3, cmap="gray", norm=None, interpolation=None):
     """Display images given image ids.
 
     Args:
@@ -46,12 +46,8 @@ def display_images(image_ids, titles=None, cols=3, cmap=None, norm=None, interpo
         plt.title(title, fontsize=9)
         plt.axis("off")
 
-        ds = pydicom.read_file(image_id)
-        image = ds.pixel_array
-        # If grayscale. Convert to RGB for consistency.
-        if len(image.shape) != 3 or image.shape[2] != 3:
-            image = np.stack((image,) * 3, -1)
-        plt.imshow(image.astype(np.uint8), cmap=cmap, norm=norm, interpolation=interpolation)
+        image = load_dicom_image(image_id)
+        plt.imshow(image, cmap=cmap, norm=norm, interpolation=interpolation)
 
         i += 1
     plt.show()
@@ -71,12 +67,18 @@ def load_dicom_image(image_id, to_RGB=False):
     ds = pydicom.dcmread(image_id)
     image = ds.pixel_array
 
+    max_pixel_value = np.amax(image)
+
+    if max_pixel_value >= 255:
+        print("Input image pixel range exceeds 255, rescaling for visualization.")
+        image = image.astype(np.float32) / max_pixel_value * 255
+
     if to_RGB:
         # If grayscale. Convert to RGB for consistency.
         if len(image.shape) != 3 or image.shape[2] != 3:
             image = np.stack((image,) * 3, -1)
 
-    return image
+    return image.astype(np.uint8)
 
 
 def load_mask(image_id, dataset):
@@ -150,7 +152,7 @@ def load_mask(image_id, dataset):
     return mask.astype(np.bool), class_ids.astype(np.int32)
 
 
-def apply_mask(image, mask, color, alpha=0.5):
+def apply_mask(image, mask, color, alpha=0.3):
     """Apply the given mask to the image.
 
     Args:
@@ -217,6 +219,7 @@ def get_image_ground_truth(image_id, dataset):
             [height, width, instance_count]. The height and width are those of the image unless
         use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.
     """
+    # image = load_dicom_image(image_id, to_RGB=True)
     image = load_dicom_image(image_id, to_RGB=True)
 
     mask, class_ids = load_mask(image_id, dataset)
@@ -343,6 +346,7 @@ def display_annotations(
             p = Polygon(verts, facecolor="none", edgecolor=color)
             ax.add_patch(p)
     ax.imshow(masked_image.astype(np.uint8))
+    # ax.imshow(masked_image)
     if auto_show:
         plt.show()
 

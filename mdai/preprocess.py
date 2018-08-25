@@ -132,9 +132,6 @@ class Project:
         Returns:
             classes dict
         """
-
-        # validate labels
-        # make sure labels exist
         classes_dict = {}
 
         for label_id, class_id in labels_dict.items():
@@ -142,6 +139,7 @@ class Project:
                 labels_data = label_group.get_data()["labels"]
                 for label in labels_data:
                     if label["id"] == label_id:
+                        print(label["annotationMode"])
                         if class_id == 0 and label["type"] == "local":
                             raise Exception(
                                 "{} is a local type, its class id cannot be 0.".format(label_id)
@@ -150,6 +148,8 @@ class Project:
                             "class_id": class_id,
                             "class_text": label["name"],
                             "class_annotation_mode": label["annotationMode"],
+                            "scope": label["scope"],
+                            "type": label["type"],
                         }
 
         if classes_dict.keys() != labels_dict.keys():
@@ -343,7 +343,7 @@ class Dataset:
                     image_ids.add(uid)
 
         # image_ids = glob.glob(os.path.join(self.images_dir, "**/*.dcm"), recursive=True)
-        return list(image_ids)
+        return sorted(list(image_ids))
 
     def get_annotations_by_image_id(self, image_id):
         if image_id not in self.image_ids:
