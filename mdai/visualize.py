@@ -46,14 +46,14 @@ def display_images(image_ids, titles=None, cols=3, cmap="gray", norm=None, inter
         plt.title(title, fontsize=9)
         plt.axis("off")
 
-        image = load_dicom_image(image_id)
+        image = load_dicom_image(image_id, rescale=True)
         plt.imshow(image, cmap=cmap, norm=norm, interpolation=interpolation)
 
         i += 1
     plt.show()
 
 
-def load_dicom_image(image_id, to_RGB=False):
+def load_dicom_image(image_id, to_RGB=False, rescale=False):
     """ Load a DICOM image.
     Args:
         image_id (str):
@@ -67,21 +67,23 @@ def load_dicom_image(image_id, to_RGB=False):
     ds = pydicom.dcmread(image_id)
     image = ds.pixel_array
 
-    max_pixel_value = np.amax(image)
-    min_pixel_value = np.amin(image)
+    if rescale:
+        max_pixel_value = np.amax(image)
+        min_pixel_value = np.amin(image)
 
-    if max_pixel_value >= 255:
-        print("Input image pixel range exceeds 255, rescaling for visualization.")
-        pixel_range = np.abs(max_pixel_value - min_pixel_value)
-        pixel_range = pixel_range if pixel_range != 0 else 1
-        image = image.astype(np.float32) / pixel_range * 255
+        if max_pixel_value >= 255:
+            print("Input image pixel range exceeds 255, rescaling for visualization.")
+            pixel_range = np.abs(max_pixel_value - min_pixel_value)
+            pixel_range = pixel_range if pixel_range != 0 else 1
+            image = image.astype(np.float32) / pixel_range * 255
+            image = image.astype(np.uint8)
 
     if to_RGB:
         # If grayscale. Convert to RGB for consistency.
         if len(image.shape) != 3 or image.shape[2] != 3:
             image = np.stack((image,) * 3, -1)
 
-    return image.astype(np.uint8)
+    return image
 
 
 def load_mask(image_id, dataset):
@@ -223,7 +225,7 @@ def get_image_ground_truth(image_id, dataset):
         use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.
     """
     # image = load_dicom_image(image_id, to_RGB=True)
-    image = load_dicom_image(image_id, to_RGB=True)
+    image = load_dicom_image(image_id, to_RGB=True, rescale=True)
 
     mask, class_ids = load_mask(image_id, dataset)
 
