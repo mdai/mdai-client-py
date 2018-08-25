@@ -68,10 +68,13 @@ def load_dicom_image(image_id, to_RGB=False):
     image = ds.pixel_array
 
     max_pixel_value = np.amax(image)
+    min_pixel_value = np.amin(image)
 
     if max_pixel_value >= 255:
         print("Input image pixel range exceeds 255, rescaling for visualization.")
-        image = image.astype(np.float32) / max_pixel_value * 255
+        pixel_range = np.abs(max_pixel_value - min_pixel_value)
+        pixel_range = pixel_range if pixel_range != 0 else 1
+        image = image.astype(np.float32) / pixel_range * 255
 
     if to_RGB:
         # If grayscale. Convert to RGB for consistency.
