@@ -7,9 +7,9 @@ import pytest
 
 from mdai.preprocess import Project
 
-HELLOWORLD_IMAGES_URL = "https://s3.amazonaws.com/mdai-test-data-public/mdai_public_project_PVq9raBJ_dataset_all_2018-07-17-101532.zip"
-HELLOWORLD_ANNO_URL = "https://s3.amazonaws.com/mdai-test-data-public/mdai_public_project_PVq9raBJ_dataset_all_labelgroup_all_2018-07-17-101553.json"
-TESTS_DATA_FP = "tests/data"
+IMAGES_URL = "https://s3.amazonaws.com/mdai-test-data-public/mdai_staging_project_bwRnkNW2_images_2018-08-25-192424.zip"
+ANNS_URL = "https://s3.amazonaws.com/mdai-test-data-public/mdai_staging_project_bwRnkNW2_annotations_labelgroup_all_2018-08-25-204133.json"
+TESTS_DATA_FP = "test-data"
 
 
 def download_file(url):
@@ -27,8 +27,8 @@ def download_file(url):
 def hello_world_project():
 
     os.makedirs(TESTS_DATA_FP, exist_ok=True)
-    annotations_fp = download_file(HELLOWORLD_ANNO_URL)
-    images_dir_zipped = download_file(HELLOWORLD_IMAGES_URL)
+    annotations_fp = download_file(ANNS_URL)
+    images_dir_zipped = download_file(IMAGES_URL)
     with zipfile.ZipFile(images_dir_zipped) as zf:
         zf.extractall(TESTS_DATA_FP)
     (images_dir, ext) = os.path.splitext(images_dir_zipped)
