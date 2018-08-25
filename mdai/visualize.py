@@ -68,7 +68,7 @@ def load_dicom_image(image_id, to_RGB=False):
     Returns:
         image array.
     """
-    ds = pydicom.read_file(image_id)
+    ds = pydicom.dcmread(image_id)
     image = ds.pixel_array
 
     if to_RGB:
@@ -105,7 +105,7 @@ def load_mask(image_id, dataset):
 
             label_id = a["labelId"]
             annotation_mode = dataset.label_id_to_class_annotation_mode(label_id)
-            print(annotation_mode)
+            # print(annotation_mode)
 
             if annotation_mode == "bbox":
                 # Bounding Box
