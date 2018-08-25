@@ -220,6 +220,9 @@ class Dataset:
         self.classes_dict = None
         self.imgs_anns_dict = None
 
+        # all image ids
+        self.all_image_ids = glob.glob(os.path.join(self.images_dir, "**/*.dcm"), recursive=True)
+
     def prepare(self):
         if self.classes_dict is None:
             raise Exception("Use `Project.set_labels_dict()` to set labels.")
@@ -267,9 +270,6 @@ class Dataset:
             A unique image identifier based on the DICOM file structure.
         """
 
-        # all image ids
-        image_ids = glob.glob(os.path.join(self.images_dir, "**/*.dcm"), recursive=True)
-
         uid = None
 
         if "StudyInstanceUID" and "SeriesInstanceUID" and "SOPInstanceUID" in ann:
@@ -289,13 +289,13 @@ class Dataset:
                 self.images_dir, ann["StudyInstanceUID"], ann["SeriesInstanceUID"]
             )
 
-            uid = [image_id for image_id in image_ids if image_id.startswith(prefix)]
+            uid = [image_id for image_id in self.all_image_ids if image_id.startswith(prefix)]
             # print("SeriesInstanceUID {}, uid {}".format(ann["SeriesInstanceUID"], uid))
             return uid
 
         elif "StudyInstanceUID" in ann:
             prefix = os.path.join(self.images_dir, ann["StudyInstanceUID"])
-            uid = [image_id for image_id in image_ids if image_id.startswith(prefix)]
+            uid = [image_id for image_id in self.all_image_ids if image_id.startswith(prefix)]
 
             # print("StudyInstanceUID {}, uid {}".format(ann["StudyInstanceUID"], uid))
             return uid
