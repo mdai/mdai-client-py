@@ -24,7 +24,7 @@ def download_file(url):
 
 
 @pytest.fixture
-def hello_world_project():
+def p():
 
     os.makedirs(TESTS_DATA_FP, exist_ok=True)
     annotations_fp = download_file(ANNS_URL)
