@@ -85,7 +85,7 @@ class Client:
         if r.status_code == 200:
             print("Successfully authenticated to {}.".format(self.domain))
         else:
-            print("Authorization error. Make sure your access token is valid.")
+            raise Exception("Authorization error. Make sure your access token is valid.")
 
     @retry(
         retry_on_exception=retry_on_http_error,
