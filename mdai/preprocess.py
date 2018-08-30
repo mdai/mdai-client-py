@@ -139,7 +139,6 @@ class Project:
                 labels_data = label_group.get_data()["labels"]
                 for label in labels_data:
                     if label["id"] == label_id:
-                        print(label["annotationMode"])
                         if class_id == 0 and label["type"] == "local":
                             raise Exception(
                                 "{} is a local type, its class id cannot be 0.".format(label_id)
