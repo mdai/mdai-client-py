@@ -18,8 +18,9 @@ pip install --upgrade mdai
 Coming soon.
 
 ## The MD.ai Annotator 
-The MD.ai annotator is a powerful web based application, to store and view anonymized medical images (e.g, DICOM) on the cloud, create annotations collaboratively, in real-time, and export annotations, images and labels for training. The MD.ai python client library can be used to download images and annotations, prepare the datasets, and then used to train and evaluate deep learning models. Further documentation and videos are available at https://docs.md.ai/
+The MD.ai annotator is a powerful web based application, to store and view anonymized medical images (e.g, DICOM) on the cloud, create annotations collaboratively, in real-time, and export annotations, images and labels for training. The MD.ai python client library can be used to download images and annotations, prepare the datasets, and then used to train and evaluate deep learning models. 
 
+- MD.ai Documentation and Videos URL: https://docs.md.ai/
 - MD.ai Annotator Example Project URL: https://public.md.ai/annotator/project/aGq4k6NW/workspace
 - MD.ai python client libray URL: https://github.com/mdai/mdai-client-py
 
