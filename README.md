@@ -1,6 +1,4 @@
-# mdai-client-py
-
-MD.ai Python Client Library
+# MD.ai Python Client Library
 
 **Currently pre-alpha -- API may change significantly in future releases.**
 
