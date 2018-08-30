@@ -29,12 +29,9 @@ The MD.ai annotator is a powerful web based application, to store and view anony
 More detailed information regarding the annotation JSON export format, see: https://docs.md.ai/data/json/
 
 ## Example Notebooks
-
-[HelloWorld Keras Notebook](notebooks/hello-world-keras.ipynb)
-
-[HelloWorld TFRecords Notebook](notebooks/hello-world-tfrecords-VGG16.ipynb)
-
-[HelloWorld Fast.ai](notebooks/hello-world-fastai.ipynb)
+- [HelloWorld Keras Notebook](notebooks/hello-world-keras.ipynb)  
+- [HelloWorld TFRecords Notebook](notebooks/hello-world-tfrecords-VGG16.ipynb)  
+- [HelloWorld Fast.ai](notebooks/hello-world-fastai.ipynb)  
 
 ## Introductory lessons to Deep Learning for medical imaging by [MD.ai](https://www.md.ai)
 
