@@ -8,13 +8,15 @@ You can download datasets consisting of images and annotations, create train/val
 
 To get started, check out the examples in the [notebooks section](notebooks).
 
-## Installation
-
+## Installation  
 Install and update using [pip](https://pip.pypa.io/en/stable/quickstart/):
 
 ```sh
 pip install --upgrade mdai
 ```
+## API Documentation
+Coming soon.
+
 ## The MD.ai Annotator 
 The MD.ai annotator is a powerful web based application, to store and view anonymized medical images (e.g, DICOM) on the cloud, create annotations collaboratively, in real-time, and export annotations, images and labels for training. The MD.ai python client library can be used to download images and annotations, prepare the datasets, and then used to train and evaluate deep learning models. Further documentation and videos are available at https://docs.md.ai/
 
@@ -23,8 +25,8 @@ The MD.ai annotator is a powerful web based application, to store and view anony
 
 ![MD.ai Annotator](https://docs.md.ai/img/annotator_homepage.png)
 
-## API Documentation
-Coming soon.
+## MD.ai Annotation JSON Format 
+More detailed information regarding the annotation JSON export format, see: https://docs.md.ai/data/json/
 
 ## Example Notebooks
 
