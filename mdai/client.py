@@ -34,7 +34,7 @@ class Client:
         self.session = requests.Session()
         self._test_endpoint()
 
-    def project(self, project_id, path=".", force_download=False):
+    def project(self, project_id, path=".", force_download=False, annotations_only=False):
         """Initializes Project class given project id.
 
         Arguments:
@@ -54,22 +54,34 @@ class Client:
             "session": self.session,
             "headers": self._create_headers(),
         }
+
         annotations_data_manager = ProjectDataManager(
             "annotations", force_download, **data_manager_kwargs
         )
-        images_data_manager = ProjectDataManager("images", force_download, **data_manager_kwargs)
+
+        if not annotations_only:
+            images_data_manager = ProjectDataManager(
+                "images", force_download, **data_manager_kwargs
+            )
 
         annotations_data_manager.create_data_export_job()
-        images_data_manager.create_data_export_job()
+
+        if not annotations_only:
+            images_data_manager.create_data_export_job()
 
         annotations_data_manager.wait_until_ready()
-        images_data_manager.wait_until_ready()
 
-        p = Project(
-            annotations_fp=annotations_data_manager.data_path,
-            images_dir=images_data_manager.data_path,
-        )
-        return p
+        if not annotations_only:
+            images_data_manager.wait_until_ready()
+
+            p = Project(
+                annotations_fp=annotations_data_manager.data_path,
+                images_dir=images_data_manager.data_path,
+            )
+            return p
+        else:
+            print("No project created. Downloaded annotations only.")
+            return None
 
     def _create_headers(self):
         headers = {}
