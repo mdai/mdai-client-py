@@ -4,9 +4,8 @@ import numpy as np
 
 # TODO: test load_dicom_image (with RGB option or not)
 
-# fixure image id
-def test_visualize(p):
 
+def test_visualize(p):
     labels_dict = {
         "L_egJRyg": 1,  # bounding box
         "L_MgevP2": 2,  # polygon

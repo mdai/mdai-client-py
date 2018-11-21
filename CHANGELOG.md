@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.0.4 [2018-08-09]
+
 Refactored API.
 Edited README.md.
 Added notebooks examples for integration with TensorFlow TFRecords, and fast.ai library.

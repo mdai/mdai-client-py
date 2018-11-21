@@ -1,11 +1,10 @@
-
 # Development
 
-### Python version
+## Python version
 
 [Pyenv](https://github.com/pyenv/pyenv) is recommended for managing python versions. Currently, python 3.6 is used for development.
 
-### Dependencies
+## Dependencies
 
 [Pipenv](https://docs.pipenv.org)
 
@@ -20,7 +19,7 @@ pipenv install --dev --three
 
 VSCode should automatically load the virtualenv located in the current directory. If not, go to `Python: Select Interpreter` from the command palette.
 
-### Formatting
+## Formatting
 
 [black](https://github.com/ambv/black)
 
@@ -35,7 +34,7 @@ Installed as dev dependencies in Pipenv. To use, add the following to user setti
 }
 ```
 
-### Linting
+## Linting
 
 [Pycodestyle](http://pycodestyle.pycqa.org/en/latest/)
 

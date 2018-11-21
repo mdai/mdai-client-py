@@ -7,8 +7,8 @@ import pytest
 
 from mdai.preprocess import Project
 
-IMAGES_URL = "https://s3.amazonaws.com/mdai-test-data-public/mdai_staging_project_bwRnkNW2_images_2018-08-25-192424.zip"
-ANNS_URL = "https://s3.amazonaws.com/mdai-test-data-public/mdai_staging_project_bwRnkNW2_annotations_labelgroup_all_2018-08-25-204133.json"
+IMAGES_URL = "https://s3.amazonaws.com/mdai-test-data-public/mdai_staging_project_bwRnkNW2_images_2018-08-25-192424.zip"  # noqa E501
+ANNS_URL = "https://s3.amazonaws.com/mdai-test-data-public/mdai_staging_project_bwRnkNW2_annotations_labelgroup_all_2018-08-25-204133.json"  # noqa E501
 TESTS_DATA_FP = "test-data"
 
 

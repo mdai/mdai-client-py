@@ -15,7 +15,6 @@ def create_tf_bbox_example(annotations, image_id, classes_dict):
     width = int(image.shape[1])
     height = int(image.shape[0])
 
-    # TODO: I think object detection API decoder needs jpeg images...
     raw_img = visualize.load_dicom_image(image_id, to_RGB=True)
     img = Image.fromarray(raw_img)
     img_buffer = io.BytesIO()

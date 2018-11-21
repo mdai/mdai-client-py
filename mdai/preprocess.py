@@ -272,33 +272,26 @@ class Dataset:
         uid = None
 
         if "StudyInstanceUID" and "SeriesInstanceUID" and "SOPInstanceUID" in ann:
-            # SOP aka image level
-            uid = (
-                os.path.join(
-                    self.images_dir,
-                    ann["StudyInstanceUID"],
-                    ann["SeriesInstanceUID"],
-                    ann["SOPInstanceUID"],
-                )
-                + ".dcm"
+            # SOPInstanceUID aka image level
+            uid = os.path.join(
+                self.images_dir,
+                ann["StudyInstanceUID"],
+                ann["SeriesInstanceUID"],
+                ann["SOPInstanceUID"] + ".dcm",
             )
             return uid
         elif "StudyInstanceUID" and "SeriesInstanceUID" in ann:
             prefix = os.path.join(
                 self.images_dir, ann["StudyInstanceUID"], ann["SeriesInstanceUID"]
             )
-
             uid = [image_id for image_id in self.all_image_ids if image_id.startswith(prefix)]
             # print("SeriesInstanceUID {}, uid {}".format(ann["SeriesInstanceUID"], uid))
             return uid
-
         elif "StudyInstanceUID" in ann:
             prefix = os.path.join(self.images_dir, ann["StudyInstanceUID"])
             uid = [image_id for image_id in self.all_image_ids if image_id.startswith(prefix)]
-
             # print("StudyInstanceUID {}, uid {}".format(ann["StudyInstanceUID"], uid))
             return uid
-
         else:
             raise ValueError("Unable to create UID from {}".format(ann))
 
