@@ -17,7 +17,7 @@ opencv-python ="*"
 scikit-image = "*"
 
 [dev-packages]
-black = "==18.6b4"
+black = "==18.9b0"
 keras = ">=2.2.0"
 pycodestyle = "*"
 jupyter = "*"
