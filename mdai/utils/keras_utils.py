@@ -62,7 +62,11 @@ class DataGenerator(Sequence):
         # Generate data
         for i, ID in enumerate(img_ids_temp):
             image = load_dicom_image(ID, to_RGB=self.to_RGB,rescale=self.rescale)
-            image = Image.fromarray(image)
+            try:
+                image = Image.fromarray(image)
+            except:
+                print("Pil.Image can't read image. Possible 12 or 16 bit image. Try rescale=True to scale to 8 bit.")
+
             image = image.resize((self.dim[0], self.dim[1]))
 
             X[i,] = image
