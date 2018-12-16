@@ -8,7 +8,7 @@ from PIL import Image
 
 class DataGenerator(Sequence):
     def __init__(
-        self, dataset, batch_size=32, dim=(32, 32), n_channels=1, n_classes=10, shuffle=True
+        self, dataset, batch_size=32, dim=(32, 32), n_channels=1, n_classes=10, shuffle=True, to_RGB=True, rescale=False
     ):
         """Generates data for Keras fit_generator() function.
         """
@@ -24,6 +24,8 @@ class DataGenerator(Sequence):
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.shuffle = shuffle
+        self.to_RGB = to_RGB
+        self.rescale = rescale
         self.on_epoch_end()
 
     def __len__(self):
@@ -59,7 +61,7 @@ class DataGenerator(Sequence):
 
         # Generate data
         for i, ID in enumerate(img_ids_temp):
-            image = load_dicom_image(ID, to_RGB=True)
+            image = load_dicom_image(ID, to_RGB=self.to_RGB,rescale=self.rescale)
             image = Image.fromarray(image)
             image = image.resize((self.dim[0], self.dim[1]))
 
