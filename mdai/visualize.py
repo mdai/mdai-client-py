@@ -3,9 +3,7 @@ import pydicom
 import numpy as np
 import colorsys
 import random
-
 import cv2
-
 from skimage.measure import find_contours
 import matplotlib.pyplot as plt
 from matplotlib import patches, lines
@@ -68,14 +66,16 @@ def load_dicom_image(image_id, to_RGB=False, rescale=False):
     try:
         image = ds.pixel_array
     except:
-        print("Pixel_array could not be read. Possible compressed file. Transfer Syntax UID = {ds.file_meta.TransferSyntaxUID")
+        print(
+            "Pixel_array could not be read. Possible compressed file. Transfer Syntax UID = {ds.file_meta.TransferSyntaxUID"
+        )
 
     if rescale:
         max_pixel_value = np.amax(image)
         min_pixel_value = np.amin(image)
 
         if max_pixel_value >= 255:
-            #print("Input image pixel range exceeds 255, rescaling for visualization.")
+            # print("Input image pixel range exceeds 255, rescaling for visualization.")
             pixel_range = np.abs(max_pixel_value - min_pixel_value)
             pixel_range = pixel_range if pixel_range != 0 else 1
             image = image.astype(np.float32) / pixel_range * 255
