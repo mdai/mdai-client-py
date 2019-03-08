@@ -10,7 +10,7 @@ numpy = "*"
 opencv-python ="*"
 pandas = "*"
 pillow = "*"
-pydicom = ">=1.1.0"
+pydicom = "*"
 requests = "*"
 retrying = "*"
 scikit-image = "*"
@@ -18,12 +18,8 @@ tqdm = "*"
 
 [dev-packages]
 black = "==18.9b0"
-jupyter = "*"
-keras = ">=2.2.0"
-notebook = "*"
 pycodestyle = "*"
 pytest = "*"
-tensorflow-gpu = ">=1.9.0"
 
 [requires]
 python_version = "3.6"

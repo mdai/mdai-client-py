@@ -23,17 +23,12 @@ setup(
         "opencv-python",
         "pandas",
         "pillow",
-        "pydicom>=1.1.0",
+        "pydicom",
         "requests",
         "retrying",
         "scikit-image",
         "tqdm",
     ],
-    extras_require={
-        "test": ["pytest"],
-        "keras": ["keras>=2.2.0"],
-        "tensorflow": ["tensorflow>=1.9.0"],
-    },
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
