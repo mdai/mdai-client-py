@@ -65,10 +65,13 @@ def load_dicom_image(image_id, to_RGB=False, rescale=False):
     ds = pydicom.dcmread(image_id)
     try:
         image = ds.pixel_array
-    except:
-        print(
-            "Pixel_array could not be read. Possible compressed file. Transfer Syntax UID = {ds.file_meta.TransferSyntaxUID"
+    except Exception:
+        msg = (
+            "Could not read pixel array from DICOM with TransferSyntaxUID "
+            + ds.file_meta.TransferSyntaxUID
+            + ". Likely unsupported compression format."
         )
+        print(msg)
 
     if rescale:
         max_pixel_value = np.amax(image)

@@ -2,9 +2,13 @@
 
 __version__ = "0.0.7"
 
-
-from . import visualize
 from . import preprocess
+from .client import Client
 from .utils import common_utils
 
-from .client import Client
+try:
+    CAN_VISUALIZE = True
+    from . import visualize
+except ImportError:
+    # matplotlib backend missing or cannot be loaded
+    CAN_VISUALIZE = False
