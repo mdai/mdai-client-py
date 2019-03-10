@@ -70,4 +70,4 @@ You can also run the notebook with powerful GPUs on the Google Cloud Platform. I
 
 ---
 
-&copy; 2018 MD.ai, Inc.
+&copy; 2019 MD.ai, Inc.
