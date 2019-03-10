@@ -1,6 +1,7 @@
 import os
 import sys
 import threading
+import re
 import json
 import zipfile
 import requests
@@ -26,7 +27,8 @@ class Client:
     """
 
     def __init__(self, domain="public.md.ai", access_token=None):
-        if not domain.endswith((".md.ai")):
+        domain_pattern = r"^\w+\.md\.ai(:\d+)?$"
+        if not re.match(domain_pattern, domain):
             raise ValueError("domain {} is invalid: should be format *.md.ai".format(domain))
 
         self.domain = domain
