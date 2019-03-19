@@ -55,27 +55,18 @@ class Client:
             "path": path,
             "session": self.session,
             "headers": self._create_headers(),
+            "force_download": force_download,
         }
 
-        annotations_data_manager = ProjectDataManager(
-            "annotations", force_download, **data_manager_kwargs
-        )
-
-        if not annotations_only:
-            images_data_manager = ProjectDataManager(
-                "images", force_download, **data_manager_kwargs
-            )
-
+        annotations_data_manager = ProjectDataManager("annotations", **data_manager_kwargs)
         annotations_data_manager.create_data_export_job()
-
         if not annotations_only:
+            images_data_manager = ProjectDataManager("images", **data_manager_kwargs)
             images_data_manager.create_data_export_job()
 
         annotations_data_manager.wait_until_ready()
-
         if not annotations_only:
             images_data_manager.wait_until_ready()
-
             p = Project(
                 annotations_fp=annotations_data_manager.data_path,
                 images_dir=images_data_manager.data_path,
@@ -154,16 +145,16 @@ class ProjectDataManager:
 
     def __init__(
         self,
-        type,
-        force_download,
+        data_type,
         domain=None,
         project_id=None,
         path=".",
         session=None,
         headers=None,
+        force_download=False,
     ):
-        if type not in ["images", "annotations"]:
-            raise ValueError("type must be 'images' or 'annotations'.")
+        if data_type not in ["images", "annotations"]:
+            raise ValueError("data_type must be 'images' or 'annotations'.")
         if not domain:
             raise ValueError("domain is not specified.")
         if not project_id:
@@ -171,7 +162,7 @@ class ProjectDataManager:
         if not os.path.exists(path):
             raise OSError("Path '{}' does not exist.".format(path))
 
-        self.type = type
+        self.data_type = data_type
         self.force_download = force_download
 
         self.domain = domain
@@ -192,11 +183,11 @@ class ProjectDataManager:
         """Create data export job through MD.ai API.
         This is an async operation. Status code of 202 indicates successful creation of job.
         """
-        endpoint = "https://{}/api/data-export/{}".format(self.domain, self.type)
+        endpoint = "https://{}/api/data-export/{}".format(self.domain, self.data_type)
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code == 202:
-            msg = "Preparing {} export for project {}...".format(self.type, self.project_id)
+            msg = "Preparing {} export for project {}...".format(self.data_type, self.project_id)
             print(msg.ljust(100))
             self._check_data_export_job_progress()
         else:
@@ -212,9 +203,9 @@ class ProjectDataManager:
         self._ready.wait()
 
     def _get_data_export_params(self):
-        if self.type == "images":
+        if self.data_type == "images":
             params = {"projectHashId": self.project_id, "exportFormat": "zip"}
-        elif self.type == "annotations":
+        elif self.data_type == "annotations":
             # TODO: restrict to assigned labelgroup
             params = {
                 "projectHashId": self.project_id,
@@ -226,7 +217,7 @@ class ProjectDataManager:
     def _check_data_export_job_progress(self):
         """Poll for data export job progress.
         """
-        endpoint = "https://{}/api/data-export/{}/progress".format(self.domain, self.type)
+        endpoint = "https://{}/api/data-export/{}/progress".format(self.domain, self.data_type)
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
 
@@ -259,7 +250,7 @@ class ProjectDataManager:
                     time_remaining_fmt = "in {} seconds".format(time_remaining)
                 end_char = "\r" if progress < 100 else "\n"
                 msg = "Exporting {} for project {}...{}% (time remaining: {}).".format(
-                    self.type, self.project_id, progress, time_remaining_fmt
+                    self.data_type, self.project_id, progress, time_remaining_fmt
                 )
                 print(msg.ljust(100), end=end_char, flush=True)
 
@@ -275,98 +266,89 @@ class ProjectDataManager:
             self._on_data_export_job_error()
 
     def _on_data_export_job_done(self):
-        endpoint = "https://{}/api/data-export/{}/done".format(self.domain, self.type)
+        endpoint = "https://{}/api/data-export/{}/done".format(self.domain, self.data_type)
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
+
         try:
-            file_key = r.json()["fileKey"]
+            file_keys = r.json()["fileKeys"]
 
-            if file_key:
-
-                # check cached file
-                filepath = os.path.join(self.path, file_key)
-
-                if self.type == "images":
-                    data_path = os.path.splitext(filepath)[0]
-                elif self.type == "annotations":
-                    data_path = filepath
-
-                # if file has been downloaded previously
-                if not self.force_download:
-                    if os.path.exists(filepath) or os.path.exists(data_path):
-                        if self.type == "images":
-                            if not os.path.exists(data_path):
-                                print("Extracting archive: {}".format(file_key))
-                                with zipfile.ZipFile(filepath, "r") as f:
-                                    f.extractall(self.path)
-                            self.data_path = data_path
-                        elif self.type == "annotations":
-                            self.data_path = data_path
-
-                        # fire ready threading.Event
-                        self._ready.set()
-                        print(
-                            "Using cached {} data for project {}.".format(
-                                self.type, self.project_id
-                            )
-                        )
-                    else:
-                        # download in separate thread
-                        t = threading.Thread(target=self._download_file, args=(file_key,))
-                        t.start()
-                else:
+            if file_keys:
+                data_path = self._get_data_path(file_keys)
+                if self.force_download or not os.path.exists(data_path):
                     # download in separate thread
-                    t = threading.Thread(target=self._download_file, args=(file_key,))
+                    t = threading.Thread(target=self._download_files, args=(file_keys,))
                     t.start()
-
+                else:
+                    # use existing data
+                    self.data_path = data_path
+                    print(
+                        "Using cached {} data for project {}.".format(
+                            self.data_type, self.project_id
+                        )
+                    )
+                    # fire ready threading.Event
+                    self._ready.set()
         except (TypeError, KeyError):
-            self._on_data_export_job_error(type, project_id)
+            self._on_data_export_job_error()
 
     def _on_data_export_job_error(self):
-        endpoint = "https://{}/api/data-export/{}/error".format(self.domain, self.type)
+        endpoint = "https://{}/api/data-export/{}/error".format(self.domain, self.data_type)
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
-        print("Error exporting {} for project {}.".format(self.type, self.project_id))
+        print("Error exporting {} for project {}.".format(self.data_type, self.project_id))
+        # fire ready threading.Event
+        self._ready.set()
 
-    def _download_file(self, file_key):
-        """Downloads file via signed URL requested from MD.ai API.
+    def _get_data_path(self, file_keys):
+        if self.data_type == "images":
+            # should be folder for zip file:
+            # xxxx.zip -> xxxx/
+            # xxxx_part1of3.zip -> xxxx/
+            return re.sub(r"(_part\d+of\d+)?\.\S+$", "", file_keys[0])
+        elif self.data_type == "annotations":
+            # annotations export will be single file
+            return file_keys[0]
+
+    def _download_files(self, file_keys):
+        """Downloads files via signed URL requested from MD.ai API.
         """
-        print("Downloading file: {}".format(file_key))
-        filepath = os.path.join(self.path, file_key)
+        for file_key in file_keys:
+            print("Downloading file: {}".format(file_key))
+            filepath = os.path.join(self.path, file_key)
 
-        url = "https://{}/api/project-files/signedurl/get?key={}".format(
-            self.domain, requests.utils.quote(file_key)
-        )
+            url = "https://{}/api/project-files/signedurl/get?key={}".format(
+                self.domain, requests.utils.quote(file_key)
+            )
 
-        # stream response so we can display progress bar
-        r = requests.get(url, stream=True, headers=self.headers)
+            # stream response so we can display progress bar
+            r = requests.get(url, stream=True, headers=self.headers)
 
-        # total size in bytes
-        total_size = int(r.headers.get("content-length", 0))
-        block_size = 32 * 1024
-        wrote = 0
-        with open(filepath, "wb") as f:
-            with tqdm(total=total_size, unit="B", unit_scale=True, unit_divisor=1024) as pbar:
-                for chunk in r.iter_content(block_size):
-                    f.write(chunk)
-                    wrote = wrote + len(chunk)
-                    pbar.update(block_size)
-        if total_size != 0 and wrote != total_size:
-            raise IOError("Error downloading file {}.".format(file_key))
+            # total size in bytes
+            total_size = int(r.headers.get("content-length", 0))
+            block_size = 32 * 1024
+            wrote = 0
+            with open(filepath, "wb") as f:
+                with tqdm(total=total_size, unit="B", unit_scale=True, unit_divisor=1024) as pbar:
+                    for chunk in r.iter_content(block_size):
+                        f.write(chunk)
+                        wrote = wrote + len(chunk)
+                        pbar.update(block_size)
+            if total_size != 0 and wrote != total_size:
+                raise IOError("Error downloading file {}.".format(file_key))
 
-        if self.type == "images":
-            # unzip archive
-            print("Extracting archive: {}".format(file_key))
-            with zipfile.ZipFile(filepath, "r") as f:
-                f.extractall(self.path)
-            # images directory should have same name as archive file
-            self.data_path = os.path.splitext(filepath)[0]
-        elif self.type == "annotations":
-            self.data_path = filepath
+            if self.data_type == "images":
+                # unzip archive
+                print("Extracting archive: {}".format(file_key))
+                with zipfile.ZipFile(filepath, "r") as f:
+                    f.extractall(self.path)
+
+        self.data_path = self._get_data_path(file_keys)
+
+        print("Success: {} data for project {} ready.".format(self.data_type, self.project_id))
 
         # fire ready threading.Event
         self._ready.set()
-        print("Success: {} data for project {} ready.".format(self.type, self.project_id))
 
 
 class AnnotationsImportManager:
@@ -426,6 +408,7 @@ class AnnotationsImportManager:
             print(msg.ljust(100))
             self._check_job_progress()
         else:
+            print(r.status_code)
             if r.status_code == 401:
                 msg = (
                     "Project, dataset, or model does not exist, "
@@ -485,8 +468,6 @@ class AnnotationsImportManager:
             return
         elif status == "done":
             self._on_job_done()
-            # fire ready threading.Event
-            self._ready.set()
         elif status == "error":
             self._on_job_error()
 
@@ -495,10 +476,13 @@ class AnnotationsImportManager:
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
         print("Successfully imported annotations into project {}.".format(self.project_id))
+        # fire ready threading.Event
+        self._ready.set()
 
-    def _on_data_export_job_error(self):
+    def _on_job_error(self):
         endpoint = "https://{}/api/data-export/annotations/error".format(self.domain)
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
         print("Error importing annotations into project {}.".format(self.project_id))
-
+        # fire ready threading.Event
+        self._ready.set()
