@@ -214,12 +214,20 @@ class ProjectDataManager:
             }
         return params
 
+    @retry(
+        retry_on_exception=retry_on_http_error,
+        wait_exponential_multiplier=100,
+        wait_exponential_max=1000,
+        stop_max_attempt_number=10,
+    )
     def _check_data_export_job_progress(self):
         """Poll for data export job progress.
         """
         endpoint = "https://{}/api/data-export/{}/progress".format(self.domain, self.data_type)
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
+        if r.status_code != 200:
+            r.raise_for_status()
 
         try:
             body = r.json()
@@ -265,10 +273,18 @@ class ProjectDataManager:
         elif status == "error":
             self._on_data_export_job_error()
 
+    @retry(
+        retry_on_exception=retry_on_http_error,
+        wait_exponential_multiplier=100,
+        wait_exponential_max=1000,
+        stop_max_attempt_number=10,
+    )
     def _on_data_export_job_done(self):
         endpoint = "https://{}/api/data-export/{}/done".format(self.domain, self.data_type)
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
+        if r.status_code != 200:
+            r.raise_for_status()
 
         try:
             file_keys = r.json()["fileKeys"]
@@ -292,10 +308,18 @@ class ProjectDataManager:
         except (TypeError, KeyError):
             self._on_data_export_job_error()
 
+    @retry(
+        retry_on_exception=retry_on_http_error,
+        wait_exponential_multiplier=100,
+        wait_exponential_max=1000,
+        stop_max_attempt_number=10,
+    )
     def _on_data_export_job_error(self):
         endpoint = "https://{}/api/data-export/{}/error".format(self.domain, self.data_type)
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
+        if r.status_code != 200:
+            r.raise_for_status()
         print("Error exporting {} for project {}.".format(self.data_type, self.project_id))
         # fire ready threading.Event
         self._ready.set()
@@ -420,12 +444,20 @@ class AnnotationsImportManager:
     def wait_until_ready(self):
         self._ready.wait()
 
+    @retry(
+        retry_on_exception=retry_on_http_error,
+        wait_exponential_multiplier=100,
+        wait_exponential_max=1000,
+        stop_max_attempt_number=10,
+    )
     def _check_job_progress(self):
         """Poll for annotations import job progress.
         """
         endpoint = "https://{}/api/data-import/annotations/progress".format(self.domain)
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
+        if r.status_code != 200:
+            r.raise_for_status()
 
         try:
             body = r.json()
@@ -471,18 +503,34 @@ class AnnotationsImportManager:
         elif status == "error":
             self._on_job_error()
 
+    @retry(
+        retry_on_exception=retry_on_http_error,
+        wait_exponential_multiplier=100,
+        wait_exponential_max=1000,
+        stop_max_attempt_number=10,
+    )
     def _on_job_done(self):
         endpoint = "https://{}/api/data-export/annotations/done".format(self.domain)
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
+        if r.status_code != 200:
+            r.raise_for_status()
         print("Successfully imported annotations into project {}.".format(self.project_id))
         # fire ready threading.Event
         self._ready.set()
 
+    @retry(
+        retry_on_exception=retry_on_http_error,
+        wait_exponential_multiplier=100,
+        wait_exponential_max=1000,
+        stop_max_attempt_number=10,
+    )
     def _on_job_error(self):
         endpoint = "https://{}/api/data-export/annotations/error".format(self.domain)
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
+        if r.status_code != 200:
+            r.raise_for_status()
         print("Error importing annotations into project {}.".format(self.project_id))
         # fire ready threading.Event
         self._ready.set()
