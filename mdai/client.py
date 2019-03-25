@@ -329,10 +329,12 @@ class ProjectDataManager:
             # should be folder for zip file:
             # xxxx.zip -> xxxx/
             # xxxx_part1of3.zip -> xxxx/
-            return re.sub(r"(_part\d+of\d+)?\.\S+$", "", file_keys[0])
+            images_dir = re.sub(r"(_part\d+of\d+)?\.\S+$", "", file_keys[0])
+            return os.path.join(self.path, images_dir)
         elif self.data_type == "annotations":
             # annotations export will be single file
-            return file_keys[0]
+            annotations_fp = file_keys[0]
+            return os.path.join(self.path, annotations_fp)
 
     def _download_files(self, file_keys):
         """Downloads files via signed URL requested from MD.ai API.
