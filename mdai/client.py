@@ -512,7 +512,7 @@ class AnnotationsImportManager:
         stop_max_attempt_number=10,
     )
     def _on_job_done(self):
-        endpoint = "https://{}/api/data-export/annotations/done".format(self.domain)
+        endpoint = "https://{}/api/data-import/annotations/done".format(self.domain)
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
@@ -528,7 +528,7 @@ class AnnotationsImportManager:
         stop_max_attempt_number=10,
     )
     def _on_job_error(self):
-        endpoint = "https://{}/api/data-export/annotations/error".format(self.domain)
+        endpoint = "https://{}/api/data-import/annotations/error".format(self.domain)
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
