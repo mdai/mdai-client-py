@@ -56,8 +56,8 @@ def train_test_split(dataset, shuffle=True, validation_split=0.1):
     return train_dataset, valid_dataset
 
 
-def jsonToDataframe(jsonFile, dataset="all_datasets", should_return_labels=False):
-    with open(jsonFile, "r") as f:
+def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=False):
+    with open(json_file, "r") as f:
         data = json.load(f)
 
     a = pd.DataFrame([])
@@ -91,7 +91,7 @@ def jsonToDataframe(jsonFile, dataset="all_datasets", should_return_labels=False
     )
     result.columns = ["labels", "id", "name"]
 
-    def unpackDictionary(df, column):
+    def unpack_dictionary(df, column):
         ret = None
         ret = pd.concat(
             [df, pd.DataFrame((d for idx, d in df[column].iteritems()))],
@@ -101,8 +101,8 @@ def jsonToDataframe(jsonFile, dataset="all_datasets", should_return_labels=False
         del ret[column]
         return ret
 
-    labelGroups = unpackDictionary(result, "labels")
-    labelGroups.columns = [
+    label_groups = unpack_dictionary(result, "labels")
+    label_groups.columns = [
         "groupId",
         "groupName",
         "annotationMode",
@@ -116,7 +116,7 @@ def jsonToDataframe(jsonFile, dataset="all_datasets", should_return_labels=False
         "type",
         "updatedAt",
     ]
-    labelGroups = labelGroups[
+    label_groups = label_groups[
         [
             "groupId",
             "groupName",
@@ -130,11 +130,11 @@ def jsonToDataframe(jsonFile, dataset="all_datasets", should_return_labels=False
         ]
     ]
 
-    a = a.merge(labelGroups, on="labelId", sort=False)
+    a = a.merge(label_groups, on="labelId", sort=False)
     a = a.merge(
         studies[["StudyInstanceUID", "number"]], on="StudyInstanceUID", sort=False
     )
     if should_return_labels == True:
-        return a, studies, labelGroups
+        return a, studies, label_groups
     else:
         return a, studies
