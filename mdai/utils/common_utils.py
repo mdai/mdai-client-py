@@ -1,5 +1,7 @@
 import random
 import copy
+import json
+import pandas as pd
 
 
 def hex2rgb(h):
@@ -52,3 +54,87 @@ def train_test_split(dataset, shuffle=True, validation_split=0.1):
         % (len(train_image_ids), len(valid_image_ids))
     )
     return train_dataset, valid_dataset
+
+
+def jsonToDataframe(jsonFile, dataset="all_datasets", should_return_labels=False):
+    with open(jsonFile, "r") as f:
+        data = json.load(f)
+
+    a = pd.DataFrame([])
+    studies = pd.DataFrame([])
+
+    # Gets annotations for all datasets
+    if dataset == "all_datasets":
+        for d in data["datasets"]:
+            annots = pd.DataFrame(d["annotations"])
+            annots["dataset"] = d["name"]
+            study = pd.DataFrame(d["studies"])
+            study["dataset"] = d["name"]
+            a = a.append(annots, ignore_index=True, sort=False)
+            studies = studies.append(study, ignore_index=True, sort=False)
+    else:
+        for d in data["datasets"]:
+            if d["name"] == dataset:
+                annots = pd.DataFrame(d["annotations"])
+                annots["dataset"] = d["name"]
+                study = pd.DataFrame(d["studies"])
+                study["dataset"] = d["name"]
+                a = a.append(annots, ignore_index=True, sort=False)
+                studies = studies.append(study, ignore_index=True, sort=False)
+
+    studies = studies[["StudyInstanceUID", "dataset", "number"]]
+    g = pd.DataFrame(data["labelGroups"])
+
+    # unpack arrays
+    result = pd.DataFrame(
+        [(d, tup.id, tup.name) for tup in g.itertuples() for d in tup.labels]
+    )
+    result.columns = ["labels", "id", "name"]
+
+    def unpackDictionary(df, column):
+        ret = None
+        ret = pd.concat(
+            [df, pd.DataFrame((d for idx, d in df[column].iteritems()))],
+            axis=1,
+            sort=False,
+        )
+        del ret[column]
+        return ret
+
+    labelGroups = unpackDictionary(result, "labels")
+    labelGroups.columns = [
+        "groupId",
+        "groupName",
+        "annotationMode",
+        "color",
+        "createdAt",
+        "description",
+        "labelId",
+        "labelName",
+        "radlexTagIdsLabel",
+        "scope",
+        "type",
+        "updatedAt",
+    ]
+    labelGroups = labelGroups[
+        [
+            "groupId",
+            "groupName",
+            "annotationMode",
+            "color",
+            "description",
+            "labelId",
+            "labelName",
+            "radlexTagIdsLabel",
+            "scope",
+        ]
+    ]
+
+    a = a.merge(labelGroups, on="labelId", sort=False)
+    a = a.merge(
+        studies[["StudyInstanceUID", "number"]], on="StudyInstanceUID", sort=False
+    )
+    if should_return_labels == True:
+        return a, studies, labelGroups
+    else:
+        return a, studies
