@@ -17,9 +17,9 @@ scikit-image = "*"
 tqdm = "*"
 
 [dev-packages]
-black = "==18.9b0"
+black = "==19.3b0"
 pycodestyle = "*"
 pytest = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"
