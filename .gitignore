@@ -1,3 +1,4 @@
+.vscode/
 .venv/
 .cache/
 .pytest_cache/
