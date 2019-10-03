@@ -1,8 +1,6 @@
 from PIL import Image
 import tensorflow as tf
 import sys
-import pydicom
-import numpy as np
 import io
 import hashlib
 from object_detection.utils import dataset_util

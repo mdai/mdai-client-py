@@ -1,4 +1,3 @@
-import pytest
 from mdai import visualize
 import numpy as np
 

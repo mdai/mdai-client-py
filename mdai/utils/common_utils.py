@@ -86,17 +86,13 @@ def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=Fa
     g = pd.DataFrame(data["labelGroups"])
 
     # unpack arrays
-    result = pd.DataFrame(
-        [(d, tup.id, tup.name) for tup in g.itertuples() for d in tup.labels]
-    )
+    result = pd.DataFrame([(d, tup.id, tup.name) for tup in g.itertuples() for d in tup.labels])
     result.columns = ["labels", "id", "name"]
 
     def unpack_dictionary(df, column):
         ret = None
         ret = pd.concat(
-            [df, pd.DataFrame((d for idx, d in df[column].iteritems()))],
-            axis=1,
-            sort=False,
+            [df, pd.DataFrame((d for idx, d in df[column].iteritems()))], axis=1, sort=False
         )
         del ret[column]
         return ret
@@ -131,9 +127,7 @@ def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=Fa
     ]
 
     a = a.merge(label_groups, on="labelId", sort=False)
-    a = a.merge(
-        studies[["StudyInstanceUID", "number"]], on="StudyInstanceUID", sort=False
-    )
+    a = a.merge(studies[["StudyInstanceUID", "number"]], on="StudyInstanceUID", sort=False)
     if should_return_labels == True:
         return a, studies, label_groups
     else:

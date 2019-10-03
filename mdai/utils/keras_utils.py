@@ -1,4 +1,3 @@
-
 from mdai.visualize import load_dicom_image
 from keras.utils import Sequence, to_categorical
 
@@ -8,7 +7,15 @@ from PIL import Image
 
 class DataGenerator(Sequence):
     def __init__(
-        self, dataset, batch_size=32, dim=(32, 32), n_channels=1, n_classes=10, shuffle=True, to_RGB=True, rescale=False
+        self,
+        dataset,
+        batch_size=32,
+        dim=(32, 32),
+        n_channels=1,
+        n_classes=10,
+        shuffle=True,
+        to_RGB=True,
+        rescale=False,
     ):
         """Generates data for Keras fit_generator() function.
         """
@@ -61,11 +68,14 @@ class DataGenerator(Sequence):
 
         # Generate data
         for i, ID in enumerate(img_ids_temp):
-            image = load_dicom_image(ID, to_RGB=self.to_RGB,rescale=self.rescale)
+            image = load_dicom_image(ID, to_RGB=self.to_RGB, rescale=self.rescale)
             try:
                 image = Image.fromarray(image)
-            except:
-                print("Pil.Image can't read image. Possible 12 or 16 bit image. Try rescale=True to scale to 8 bit.")
+            except Exception:
+                print(
+                    "Pil.Image can't read image. Possible 12 or 16 bit image. Try rescale=True to "
+                    + "scale to 8 bit."
+                )
 
             image = image.resize((self.dim[0], self.dim[1]))
 

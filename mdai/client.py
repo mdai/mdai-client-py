@@ -1,8 +1,6 @@
 import os
-import sys
 import threading
 import re
-import json
 import zipfile
 import requests
 import urllib3.exceptions

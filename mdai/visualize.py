@@ -1,4 +1,3 @@
-import pandas as pd
 import pydicom
 import numpy as np
 import colorsys
@@ -6,8 +5,7 @@ import random
 import cv2
 from skimage.measure import find_contours
 import matplotlib.pyplot as plt
-from matplotlib import patches, lines
-from matplotlib.patches import Polygon
+from matplotlib import patches
 
 
 def random_colors(N, bright=True):
@@ -53,6 +51,7 @@ def display_images(image_ids, titles=None, cols=3, cmap="gray", norm=None, inter
 
 def load_dicom_image(image_id, to_RGB=False, rescale=False):
     """ Load a DICOM image.
+
     Args:
         image_id (str):
             image id (filepath).
@@ -219,16 +218,13 @@ def get_image_ground_truth(image_id, dataset):
     Returns:
         image:
             [height, width, 3]
-
-        shape:
-            the original shape of the image before resizing and cropping.
         class_ids:
             [instance_count] Integer class IDs
         bbox:
             [instance_count, (y1, x1, y2, x2)]
         mask:
             [height, width, instance_count]. The height and width are those of the image unless
-        use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.
+            use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.
     """
     # image = load_dicom_image(image_id, to_RGB=True)
     image = load_dicom_image(image_id, to_RGB=True, rescale=True)
@@ -335,7 +331,6 @@ def display_annotations(
             score = scores[i] if scores is not None else None
 
             label = class_id
-            x = random.randint(x1, (x1 + x2) // 2)
             caption = "{} {:.3f}".format(label, score) if score else label
         else:
             caption = captions[i]
@@ -354,7 +349,7 @@ def display_annotations(
         for verts in contours:
             # Subtract the padding and flip (y, x) to (x, y)
             verts = np.fliplr(verts) - 1
-            p = Polygon(verts, facecolor="none", edgecolor=color)
+            p = patches.Polygon(verts, facecolor="none", edgecolor=color)
             ax.add_patch(p)
     ax.imshow(masked_image.astype(np.uint8))
     # ax.imshow(masked_image)

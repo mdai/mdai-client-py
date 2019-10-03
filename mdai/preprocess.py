@@ -1,10 +1,5 @@
-import numpy as np
-import re
 import os
-import warnings
 import json
-import pandas as pd
-import pydicom
 import collections
 import glob
 
@@ -199,6 +194,7 @@ class LabelGroup:
 
 class Dataset:
     """A dataset consists of DICOM images and annotations.
+
     Args:
         dataset_data:
             Dataset json data.
