@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.abspath("../mdai"))
 # -- Project information -----------------------------------------------------
 
 project = "mdai-client-py"
-copyright = "2018 md.ai"
-author = "md.ai Team"
+copyright = "2019 MD.ai"
+author = "MD.ai"
 
 # The short X.Y version
 version = ""
@@ -130,7 +130,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "mdai-client-py.tex", "mdai-client-py Documentation", "md.ai", "manual")
+    (master_doc, "mdai-client-py.tex", "mdai-client-py Documentation", "MD.ai", "manual")
 ]
 
 
