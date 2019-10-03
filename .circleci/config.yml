@@ -1,31 +1,88 @@
+common_deploy_setup: &common_deploy_setup
+  working_directory: ~/mdai-client-py
+  docker:
+    - image: circleci/python:3.7.3
+
+chown_dirs: &chown_dirs
+  run:
+    command: |
+      sudo chown -R circleci:circleci /usr/local/bin
+      sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
+
+step_restore_cache: &step_restore_cache
+  restore_cache:
+    keys:
+      - v1-{{ checksum "poetry.lock" }}
+    paths:
+      - '.venv'
+      - '/usr/local/bin'
+      - '/usr/local/lib/python3.7/site-packages'
+
+step_install_dependencies: &step_install_dependencies
+  run:
+    name: Install dependencies
+    command: |
+      sudo pip install poetry
+      poetry config settings.virtualenvs.create true
+      poetry config settings.virtualenvs.in-project true
+      poetry install
+
+step_save_cache: &step_save_cache
+  save_cache:
+    key: v1-{{ checksum "poetry.lock" }}
+    paths:
+      - '.venv'
+      - '/usr/local/bin'
+      - '/usr/local/lib/python3.7/site-packages'
+
+run_tests: &run_tests
+  run:
+    name: Run tests
+    command: |
+      poetry run pytest
+
 version: 2
 jobs:
-  build:
-    working_directory: ~/mdai-client-py
-    docker:
-      - image: circleci/python:3.7.3
-        environment:
-          PIPENV_VENV_IN_PROJECT: true
+  test:
+    <<: *common_deploy_setup
+    resource_class: small
     steps:
       - checkout
-      - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-      - restore_cache:
-          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - <<: *chown_dirs
+      - <<: *step_restore_cache
+      - <<: *step_install_dependencies
+      - <<: *step_save_cache
+      - <<: *run_tests
+
+  test_and_release:
+    <<: *common_deploy_setup
+    resource_class: small
+    steps:
+      - checkout
+      - <<: *chown_dirs
+      - <<: *step_restore_cache
+      - <<: *step_install_dependencies
+      - <<: *step_save_cache
+      - <<: *run_tests
       - run:
+          name: Release
           command: |
-            sudo pip install pipenv
-            pipenv install --dev
-      - save_cache:
-          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-          paths:
-            - '.venv'
-            - '/usr/local/bin'
-            - '/usr/local/lib/python3.7/site-packages'
-      - run:
-          name: run tests
-          command: |
-            pipenv run "pytest"
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
+            cat $PYPIRC_CONTENTS | base64 --decode > ~/.pypirc
+            poetry run pip install twine
+            poetry run python setup.py sdist bdist_wheel
+            twine upload dist/*
+
+workflows:
+  version: 2
+  deploy:
+    jobs:
+      - test:
+          filters:
+            branches:
+              only: master
+      - test_and_release:
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
