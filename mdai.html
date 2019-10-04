@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>mdai package &#8212; mdai-client-py  documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -13,7 +11,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
    
@@ -42,7 +40,7 @@
 <li class="toctree-l2"><a class="reference internal" href="mdai.utils.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mdai.utils.html#module-mdai.utils.common_utils">mdai.utils.common_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mdai.utils.html#module-mdai.utils.keras_utils">mdai.utils.keras_utils module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mdai.utils.html#module-mdai.utils.tensorflow_utils">mdai.utils.tensorflow_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mdai.utils.html#mdai-utils-tensorflow-utils-module">mdai.utils.tensorflow_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mdai.utils.html#module-mdai.utils">Module contents</a></li>
 </ul>
 </li>
@@ -55,19 +53,60 @@
 <div class="section" id="module-mdai.client">
 <span id="mdai-client-module"></span><h2>mdai.client module<a class="headerlink" href="#module-mdai.client" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
+<dt id="mdai.client.AnnotationsImportManager">
+<em class="property">class </em><code class="sig-prename descclassname">mdai.client.</code><code class="sig-name descname">AnnotationsImportManager</code><span class="sig-paren">(</span><em class="sig-param">annotations=None</em>, <em class="sig-param">project_id=None</em>, <em class="sig-param">dataset_id=None</em>, <em class="sig-param">model_id=None</em>, <em class="sig-param">session=None</em>, <em class="sig-param">domain=None</em>, <em class="sig-param">headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#AnnotationsImportManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.AnnotationsImportManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Manager for importing annotations.</p>
+<dl class="method">
+<dt id="mdai.client.AnnotationsImportManager.create_job">
+<code class="sig-name descname">create_job</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#AnnotationsImportManager.create_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.AnnotationsImportManager.create_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create annotations import job through MD.ai API.
+This is an async operation. Status code of 202 indicates successful creation of job.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mdai.client.AnnotationsImportManager.wait_until_ready">
+<code class="sig-name descname">wait_until_ready</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#AnnotationsImportManager.wait_until_ready"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.AnnotationsImportManager.wait_until_ready" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="mdai.client.Client">
-<em class="property">class </em><code class="descclassname">mdai.client.</code><code class="descname">Client</code><span class="sig-paren">(</span><em>domain='public.md.ai'</em>, <em>access_token=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#Client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.Client" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">mdai.client.</code><code class="sig-name descname">Client</code><span class="sig-paren">(</span><em class="sig-param">domain='public.md.ai'</em>, <em class="sig-param">access_token=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#Client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.Client" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Client for communicating with MD.ai backend API.
 Communication is via user access tokens (in MD.ai Hub, Settings -&gt; User Access Tokens).</p>
 <dl class="method">
+<dt id="mdai.client.Client.import_annotations">
+<code class="sig-name descname">import_annotations</code><span class="sig-paren">(</span><em class="sig-param">annotations</em>, <em class="sig-param">project_id</em>, <em class="sig-param">dataset_id</em>, <em class="sig-param">model_id=None</em>, <em class="sig-param">chunk_size=100000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#Client.import_annotations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.Client.import_annotations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import annotations into project.
+For example, this method can be used to load machine learning model results into project as
+annotations, or quickly populate metadata labels.</p>
+<dl class="simple">
+<dt>Arguments:</dt><dd><p>project_id: hash ID of project.
+dataset_id: hash ID of machine learning model.
+model_id: hash ID of machine learning model.
+annotations: list of annotations to load.
+chunk_size: number of annotations to load as a chunk.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="mdai.client.Client.load_model_annotations">
+<code class="sig-name descname">load_model_annotations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#Client.load_model_annotations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.Client.load_model_annotations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deprecated method: use <cite>import_annotations</cite> instead.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="mdai.client.Client.project">
-<code class="descname">project</code><span class="sig-paren">(</span><em>project_id</em>, <em>path='.'</em>, <em>force_download=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#Client.project"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.Client.project" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">project</code><span class="sig-paren">(</span><em class="sig-param">project_id</em>, <em class="sig-param">path='.'</em>, <em class="sig-param">force_download=False</em>, <em class="sig-param">annotations_only=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#Client.project"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.Client.project" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializes Project class given project id.</p>
-<dl class="docutils">
-<dt>Arguments:</dt>
-<dd>project_id: hash ID of project.
-path: directory used for data.</dd>
+<dl class="simple">
+<dt>Arguments:</dt><dd><p>project_id: hash ID of project.
+path: directory used for data.</p>
+</dd>
 </dl>
 </dd></dl>
 
@@ -75,26 +114,26 @@ path: directory used for data.</dd>
 
 <dl class="class">
 <dt id="mdai.client.ProjectDataManager">
-<em class="property">class </em><code class="descclassname">mdai.client.</code><code class="descname">ProjectDataManager</code><span class="sig-paren">(</span><em>type</em>, <em>force_download</em>, <em>domain=None</em>, <em>project_id=None</em>, <em>path='.'</em>, <em>session=None</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#ProjectDataManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.ProjectDataManager" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">mdai.client.</code><code class="sig-name descname">ProjectDataManager</code><span class="sig-paren">(</span><em class="sig-param">data_type</em>, <em class="sig-param">domain=None</em>, <em class="sig-param">project_id=None</em>, <em class="sig-param">path='.'</em>, <em class="sig-param">session=None</em>, <em class="sig-param">headers=None</em>, <em class="sig-param">force_download=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#ProjectDataManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.ProjectDataManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Manager for project data exports and downloads.</p>
 <dl class="method">
 <dt id="mdai.client.ProjectDataManager.create_data_export_job">
-<code class="descname">create_data_export_job</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#ProjectDataManager.create_data_export_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.ProjectDataManager.create_data_export_job" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">create_data_export_job</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#ProjectDataManager.create_data_export_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.ProjectDataManager.create_data_export_job" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create data export job through MD.ai API.
 This is an async operation. Status code of 202 indicates successful creation of job.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="mdai.client.ProjectDataManager.wait_until_ready">
-<code class="descname">wait_until_ready</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#ProjectDataManager.wait_until_ready"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.ProjectDataManager.wait_until_ready" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">wait_until_ready</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#ProjectDataManager.wait_until_ready"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.ProjectDataManager.wait_until_ready" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="function">
 <dt id="mdai.client.retry_on_http_error">
-<code class="descclassname">mdai.client.</code><code class="descname">retry_on_http_error</code><span class="sig-paren">(</span><em>exception</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#retry_on_http_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.retry_on_http_error" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mdai.client.</code><code class="sig-name descname">retry_on_http_error</code><span class="sig-paren">(</span><em class="sig-param">exception</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/client.html#retry_on_http_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.client.retry_on_http_error" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -102,39 +141,38 @@ This is an async operation. Status code of 202 indicates successful creation of 
 <span id="mdai-preprocess-module"></span><h2>mdai.preprocess module<a class="headerlink" href="#module-mdai.preprocess" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="mdai.preprocess.Dataset">
-<em class="property">class </em><code class="descclassname">mdai.preprocess.</code><code class="descname">Dataset</code><span class="sig-paren">(</span><em>dataset_data</em>, <em>images_dir</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">mdai.preprocess.</code><code class="sig-name descname">Dataset</code><span class="sig-paren">(</span><em class="sig-param">dataset_data</em>, <em class="sig-param">images_dir</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>A dataset consists of DICOM images and annotations.
-Args:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>dataset_data:</dt>
-<dd>Dataset json data.</dd>
-<dt>images_dir:</dt>
-<dd>DICOM images directory.</dd>
+<p>A dataset consists of DICOM images and annotations.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>dataset_data:</dt><dd><p>Dataset json data.</p>
+</dd>
+<dt>images_dir:</dt><dd><p>DICOM images directory.</p>
+</dd>
 </dl>
-</div></blockquote>
+</dd>
+</dl>
 <dl class="method">
 <dt id="mdai.preprocess.Dataset.class_id_to_class_text">
-<code class="descname">class_id_to_class_text</code><span class="sig-paren">(</span><em>class_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.class_id_to_class_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.class_id_to_class_text" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">class_id_to_class_text</code><span class="sig-paren">(</span><em class="sig-param">class_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.class_id_to_class_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.class_id_to_class_text" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Dataset.class_text_to_class_id">
-<code class="descname">class_text_to_class_id</code><span class="sig-paren">(</span><em>class_text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.class_text_to_class_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.class_text_to_class_id" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">class_text_to_class_id</code><span class="sig-paren">(</span><em class="sig-param">class_text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.class_text_to_class_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.class_text_to_class_id" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Dataset.get_annotations">
-<code class="descname">get_annotations</code><span class="sig-paren">(</span><em>label_ids=None</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.get_annotations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.get_annotations" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_annotations</code><span class="sig-paren">(</span><em class="sig-param">label_ids=None</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.get_annotations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.get_annotations" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns annotations, filtered by label ids.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>label_ids (optional):</dt>
-<dd>Filter returned annotations by matching label ids.</dd>
-<dt>verbose (optional:</dt>
-<dd>Print debug messages.</dd>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>label_ids (optional):</dt><dd><p>Filter returned annotations by matching label ids.</p>
+</dd>
+<dt>verbose (optional:</dt><dd><p>Print debug messages.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -142,18 +180,17 @@ Args:</p>
 
 <dl class="method">
 <dt id="mdai.preprocess.Dataset.get_annotations_by_image_id">
-<code class="descname">get_annotations_by_image_id</code><span class="sig-paren">(</span><em>image_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.get_annotations_by_image_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.get_annotations_by_image_id" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_annotations_by_image_id</code><span class="sig-paren">(</span><em class="sig-param">image_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.get_annotations_by_image_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.get_annotations_by_image_id" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Dataset.get_image_ids">
-<code class="descname">get_image_ids</code><span class="sig-paren">(</span><em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.get_image_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.get_image_ids" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_image_ids</code><span class="sig-paren">(</span><em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.get_image_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.get_image_ids" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns image ids. Must call prepare() method first in order to generate image ids.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>verbose (Optional):</dt>
-<dd>Print debug message.</dd>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>verbose (Optional):</dt><dd><p>Print debug message.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -161,55 +198,55 @@ Args:</p>
 
 <dl class="method">
 <dt id="mdai.preprocess.Dataset.label_id_to_class_annotation_mode">
-<code class="descname">label_id_to_class_annotation_mode</code><span class="sig-paren">(</span><em>label_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.label_id_to_class_annotation_mode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.label_id_to_class_annotation_mode" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">label_id_to_class_annotation_mode</code><span class="sig-paren">(</span><em class="sig-param">label_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.label_id_to_class_annotation_mode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.label_id_to_class_annotation_mode" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Dataset.label_id_to_class_id">
-<code class="descname">label_id_to_class_id</code><span class="sig-paren">(</span><em>label_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.label_id_to_class_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.label_id_to_class_id" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">label_id_to_class_id</code><span class="sig-paren">(</span><em class="sig-param">label_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.label_id_to_class_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.label_id_to_class_id" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Dataset.prepare">
-<code class="descname">prepare</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.prepare"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.prepare" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">prepare</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.prepare"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.prepare" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Dataset.show_classes">
-<code class="descname">show_classes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.show_classes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.show_classes" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">show_classes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Dataset.show_classes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Dataset.show_classes" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="mdai.preprocess.LabelGroup">
-<em class="property">class </em><code class="descclassname">mdai.preprocess.</code><code class="descname">LabelGroup</code><span class="sig-paren">(</span><em>label_group_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#LabelGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.LabelGroup" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">mdai.preprocess.</code><code class="sig-name descname">LabelGroup</code><span class="sig-paren">(</span><em class="sig-param">label_group_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#LabelGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.LabelGroup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A label group contains multiple labels.
 Each label has properties such id, name, color, type, scope, annotation mode, rad lex tag ids.</p>
-<dl class="docutils">
-<dt>Label type:</dt>
-<dd>Global typed annotations apply to the whole instance (e.g., a CT image), while
-local typed annotations apply to a part of the image (e.g., ROI bounding box).</dd>
-<dt>Label scope:</dt>
-<dd>Scope can be of study, series, or instance.</dd>
-<dt>Label annotation mode:</dt>
-<dd>Annotation mode can be of bounding boxes, free form, polygon, etc.</dd>
+<dl class="simple">
+<dt>Label type:</dt><dd><p>Global typed annotations apply to the whole instance (e.g., a CT image), while
+local typed annotations apply to a part of the image (e.g., ROI bounding box).</p>
+</dd>
+<dt>Label scope:</dt><dd><p>Scope can be of study, series, or instance.</p>
+</dd>
+<dt>Label annotation mode:</dt><dd><p>Annotation mode can be of bounding boxes, free form, polygon, etc.</p>
+</dd>
 </dl>
 <dl class="method">
 <dt id="mdai.preprocess.LabelGroup.get_data">
-<code class="descname">get_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#LabelGroup.get_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.LabelGroup.get_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#LabelGroup.get_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.LabelGroup.get_data" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.LabelGroup.get_labels">
-<code class="descname">get_labels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#LabelGroup.get_labels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.LabelGroup.get_labels" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_labels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#LabelGroup.get_labels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.LabelGroup.get_labels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get label ids and names</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.LabelGroup.show_labels">
-<code class="descname">show_labels</code><span class="sig-paren">(</span><em>print_offset=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#LabelGroup.show_labels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.LabelGroup.show_labels" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">show_labels</code><span class="sig-paren">(</span><em class="sig-param">print_offset=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#LabelGroup.show_labels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.LabelGroup.show_labels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Show labels info</p>
 </dd></dl>
 
@@ -217,81 +254,80 @@ local typed annotations apply to a part of the image (e.g., ROI bounding box).</
 
 <dl class="class">
 <dt id="mdai.preprocess.Project">
-<em class="property">class </em><code class="descclassname">mdai.preprocess.</code><code class="descname">Project</code><span class="sig-paren">(</span><em>annotations_fp=None</em>, <em>images_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">mdai.preprocess.</code><code class="sig-name descname">Project</code><span class="sig-paren">(</span><em class="sig-param">annotations_fp=None</em>, <em class="sig-param">images_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Project consists of label groups, and datasets.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>annotations_fp (str):</dt>
-<dd>File path to the exported JSON annotation file.</dd>
-<dt>images_dir (str):</dt>
-<dd>File path to the DICOM images directory.</dd>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>annotations_fp (str):</dt><dd><p>File path to the exported JSON annotation file.</p>
+</dd>
+<dt>images_dir (str):</dt><dd><p>File path to the DICOM images directory.</p>
+</dd>
 </dl>
 </dd>
 </dl>
 <dl class="method">
 <dt id="mdai.preprocess.Project.get_dataset_by_id">
-<code class="descname">get_dataset_by_id</code><span class="sig-paren">(</span><em>dataset_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_dataset_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_dataset_by_id" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_dataset_by_id</code><span class="sig-paren">(</span><em class="sig-param">dataset_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_dataset_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_dataset_by_id" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.get_dataset_by_name">
-<code class="descname">get_dataset_by_name</code><span class="sig-paren">(</span><em>dataset_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_dataset_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_dataset_by_name" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_dataset_by_name</code><span class="sig-paren">(</span><em class="sig-param">dataset_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_dataset_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_dataset_by_name" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.get_datasets">
-<code class="descname">get_datasets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_datasets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_datasets" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_datasets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_datasets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_datasets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get JSON representation of datasets</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.get_label_group_by_id">
-<code class="descname">get_label_group_by_id</code><span class="sig-paren">(</span><em>label_group_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_group_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_group_by_id" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_label_group_by_id</code><span class="sig-paren">(</span><em class="sig-param">label_group_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_group_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_group_by_id" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.get_label_group_by_name">
-<code class="descname">get_label_group_by_name</code><span class="sig-paren">(</span><em>label_group_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_group_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_group_by_name" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_label_group_by_name</code><span class="sig-paren">(</span><em class="sig-param">label_group_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_group_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_group_by_name" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.get_label_groups">
-<code class="descname">get_label_groups</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_groups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_groups" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_label_groups</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_groups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_groups" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.get_label_id_annotation_mode">
-<code class="descname">get_label_id_annotation_mode</code><span class="sig-paren">(</span><em>label_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_id_annotation_mode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_id_annotation_mode" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_label_id_annotation_mode</code><span class="sig-paren">(</span><em class="sig-param">label_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_id_annotation_mode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_id_annotation_mode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return label id’s annotation mode.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.get_label_id_scope">
-<code class="descname">get_label_id_scope</code><span class="sig-paren">(</span><em>label_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_id_scope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_id_scope" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_label_id_scope</code><span class="sig-paren">(</span><em class="sig-param">label_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_id_scope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_id_scope" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return label id’s scope.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.get_label_id_type">
-<code class="descname">get_label_id_type</code><span class="sig-paren">(</span><em>label_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_id_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_id_type" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_label_id_type</code><span class="sig-paren">(</span><em class="sig-param">label_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.get_label_id_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.get_label_id_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return label id’s type.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.set_labels_dict">
-<code class="descname">set_labels_dict</code><span class="sig-paren">(</span><em>labels_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.set_labels_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.set_labels_dict" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_labels_dict</code><span class="sig-paren">(</span><em class="sig-param">labels_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.set_labels_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.set_labels_dict" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.show_datasets">
-<code class="descname">show_datasets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.show_datasets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.show_datasets" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">show_datasets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.show_datasets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.show_datasets" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="mdai.preprocess.Project.show_label_groups">
-<code class="descname">show_label_groups</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.show_label_groups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.show_label_groups" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">show_label_groups</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/preprocess.html#Project.show_label_groups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.preprocess.Project.show_label_groups" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -301,41 +337,40 @@ local typed annotations apply to a part of the image (e.g., ROI bounding box).</
 <span id="mdai-visualize-module"></span><h2>mdai.visualize module<a class="headerlink" href="#module-mdai.visualize" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="mdai.visualize.apply_mask">
-<code class="descclassname">mdai.visualize.</code><code class="descname">apply_mask</code><span class="sig-paren">(</span><em>image</em>, <em>mask</em>, <em>color</em>, <em>alpha=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#apply_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.apply_mask" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mdai.visualize.</code><code class="sig-name descname">apply_mask</code><span class="sig-paren">(</span><em class="sig-param">image</em>, <em class="sig-param">mask</em>, <em class="sig-param">color</em>, <em class="sig-param">alpha=0.3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#apply_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.apply_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply the given mask to the image.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>image: height, widht, channel.</dd>
-<dt>Returns:</dt>
-<dd>image with applied color mask.</dd>
+<dl class="simple">
+<dt>Args:</dt><dd><p>image: height, widht, channel.</p>
+</dd>
+<dt>Returns:</dt><dd><p>image with applied color mask.</p>
+</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="mdai.visualize.display_annotations">
-<code class="descclassname">mdai.visualize.</code><code class="descname">display_annotations</code><span class="sig-paren">(</span><em>image</em>, <em>boxes</em>, <em>masks</em>, <em>class_ids</em>, <em>scores=None</em>, <em>title=''</em>, <em>figsize=(16</em>, <em>16)</em>, <em>ax=None</em>, <em>show_mask=True</em>, <em>show_bbox=True</em>, <em>colors=None</em>, <em>captions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#display_annotations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.display_annotations" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mdai.visualize.</code><code class="sig-name descname">display_annotations</code><span class="sig-paren">(</span><em class="sig-param">image</em>, <em class="sig-param">boxes</em>, <em class="sig-param">masks</em>, <em class="sig-param">class_ids</em>, <em class="sig-param">scores=None</em>, <em class="sig-param">title=''</em>, <em class="sig-param">figsize=(16</em>, <em class="sig-param">16)</em>, <em class="sig-param">ax=None</em>, <em class="sig-param">show_mask=True</em>, <em class="sig-param">show_bbox=True</em>, <em class="sig-param">colors=None</em>, <em class="sig-param">captions=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#display_annotations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.display_annotations" title="Permalink to this definition">¶</a></dt>
 <dd><p>Display annotations for image.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>boxes:</dt>
-<dd>[num_instance, (y1, x1, y2, x2, class_id)] in image coordinates.</dd>
-<dt>masks:</dt>
-<dd>[height, width, num_instances]</dd>
-<dt>class_ids:</dt>
-<dd>[num_instances]</dd>
-<dt>scores:</dt>
-<dd>(optional) confidence scores for each box</dd>
-<dt>title:</dt>
-<dd>(optional) Figure title</dd>
-<dt>show_mask, show_bbox:</dt>
-<dd>To show masks and bounding boxes or not</dd>
-<dt>figsize:</dt>
-<dd>(optional) the size of the image</dd>
-<dt>colors:</dt>
-<dd>(optional) An array or colors to use with each object</dd>
-<dt>captions:</dt>
-<dd>(optional) A list of strings to use as captions for each object</dd>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>boxes:</dt><dd><p>[num_instance, (y1, x1, y2, x2, class_id)] in image coordinates.</p>
+</dd>
+<dt>masks:</dt><dd><p>[height, width, num_instances]</p>
+</dd>
+<dt>class_ids:</dt><dd><p>[num_instances]</p>
+</dd>
+<dt>scores:</dt><dd><p>(optional) confidence scores for each box</p>
+</dd>
+<dt>title:</dt><dd><p>(optional) Figure title</p>
+</dd>
+<dt>show_mask, show_bbox:</dt><dd><p>To show masks and bounding boxes or not</p>
+</dd>
+<dt>figsize:</dt><dd><p>(optional) the size of the image</p>
+</dd>
+<dt>colors:</dt><dd><p>(optional) An array or colors to use with each object</p>
+</dd>
+<dt>captions:</dt><dd><p>(optional) A list of strings to use as captions for each object</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -343,13 +378,12 @@ local typed annotations apply to a part of the image (e.g., ROI bounding box).</
 
 <dl class="function">
 <dt id="mdai.visualize.display_images">
-<code class="descclassname">mdai.visualize.</code><code class="descname">display_images</code><span class="sig-paren">(</span><em>image_ids</em>, <em>titles=None</em>, <em>cols=3</em>, <em>cmap=None</em>, <em>norm=None</em>, <em>interpolation=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#display_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.display_images" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mdai.visualize.</code><code class="sig-name descname">display_images</code><span class="sig-paren">(</span><em class="sig-param">image_ids</em>, <em class="sig-param">titles=None</em>, <em class="sig-param">cols=3</em>, <em class="sig-param">cmap='gray'</em>, <em class="sig-param">norm=None</em>, <em class="sig-param">interpolation=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#display_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.display_images" title="Permalink to this definition">¶</a></dt>
 <dd><p>Display images given image ids.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>image_ids (list):</dt>
-<dd>List of image ids.</dd>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>image_ids (list):</dt><dd><p>List of image ids.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -358,19 +392,18 @@ local typed annotations apply to a part of the image (e.g., ROI bounding box).</
 
 <dl class="function">
 <dt id="mdai.visualize.draw_box_on_image">
-<code class="descclassname">mdai.visualize.</code><code class="descname">draw_box_on_image</code><span class="sig-paren">(</span><em>image</em>, <em>boxes</em>, <em>h</em>, <em>w</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#draw_box_on_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.draw_box_on_image" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mdai.visualize.</code><code class="sig-name descname">draw_box_on_image</code><span class="sig-paren">(</span><em class="sig-param">image</em>, <em class="sig-param">boxes</em>, <em class="sig-param">h</em>, <em class="sig-param">w</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#draw_box_on_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.draw_box_on_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draw box on an image.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>image:</dt>
-<dd>three channel (e.g. RGB) image.</dd>
-<dt>boxes:</dt>
-<dd>normalized box coordinate (between 0.0 and 1.0).</dd>
-<dt>h:</dt>
-<dd>image height</dd>
-<dt>w:</dt>
-<dd>image width</dd>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>image:</dt><dd><p>three channel (e.g. RGB) image.</p>
+</dd>
+<dt>boxes:</dt><dd><p>normalized box coordinate (between 0.0 and 1.0).</p>
+</dd>
+<dt>h:</dt><dd><p>image height</p>
+</dd>
+<dt>w:</dt><dd><p>image width</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -378,85 +411,77 @@ local typed annotations apply to a part of the image (e.g., ROI bounding box).</
 
 <dl class="function">
 <dt id="mdai.visualize.extract_bboxes">
-<code class="descclassname">mdai.visualize.</code><code class="descname">extract_bboxes</code><span class="sig-paren">(</span><em>mask</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#extract_bboxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.extract_bboxes" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mdai.visualize.</code><code class="sig-name descname">extract_bboxes</code><span class="sig-paren">(</span><em class="sig-param">mask</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#extract_bboxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.extract_bboxes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute bounding boxes from masks.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>mask [height, width, num_instances]:</dt>
-<dd>Mask pixels are either 1 or 0.</dd>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>mask [height, width, num_instances]:</dt><dd><p>Mask pixels are either 1 or 0.</p>
+</dd>
 </dl>
 </dd>
-<dt>Returns:</dt>
-<dd>bounding box array [num_instances, (y1, x1, y2, x2)].</dd>
+<dt>Returns:</dt><dd><p>bounding box array [num_instances, (y1, x1, y2, x2)].</p>
+</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="mdai.visualize.get_image_ground_truth">
-<code class="descclassname">mdai.visualize.</code><code class="descname">get_image_ground_truth</code><span class="sig-paren">(</span><em>image_id</em>, <em>dataset</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#get_image_ground_truth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.get_image_ground_truth" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mdai.visualize.</code><code class="sig-name descname">get_image_ground_truth</code><span class="sig-paren">(</span><em class="sig-param">image_id</em>, <em class="sig-param">dataset</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#get_image_ground_truth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.get_image_ground_truth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load and return ground truth data for an image (image, mask, bounding boxes).</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>image_id:</dt>
-<dd>Image id.</dd>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>image_id:</dt><dd><p>Image id.</p>
+</dd>
 </dl>
 </dd>
-<dt>Returns:</dt>
-<dd><dl class="first docutils">
-<dt>image:</dt>
-<dd>[height, width, 3]</dd>
-<dt>shape:</dt>
-<dd>the original shape of the image before resizing and cropping.</dd>
-<dt>class_ids:</dt>
-<dd>[instance_count] Integer class IDs</dd>
-<dt>bbox:</dt>
-<dd>[instance_count, (y1, x1, y2, x2)]</dd>
-<dt>mask:</dt>
-<dd>[height, width, instance_count]. The height and width are those of the image unless</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>image:</dt><dd><p>[height, width, 3]</p>
+</dd>
+<dt>class_ids:</dt><dd><p>[instance_count] Integer class IDs</p>
+</dd>
+<dt>bbox:</dt><dd><p>[instance_count, (y1, x1, y2, x2)]</p>
+</dd>
+<dt>mask:</dt><dd><p>[height, width, instance_count]. The height and width are those of the image unless
+use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.</p>
+</dd>
 </dl>
-<p class="last">use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="mdai.visualize.load_dicom_image">
-<code class="descclassname">mdai.visualize.</code><code class="descname">load_dicom_image</code><span class="sig-paren">(</span><em>image_id</em>, <em>to_RGB=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#load_dicom_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.load_dicom_image" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load a DICOM image.
-Args:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>image_id (str):</dt>
-<dd>image id (filepath).</dd>
-<dt>to_RGB (bool, optional):</dt>
-<dd>Convert grayscale image to RGB.</dd>
+<code class="sig-prename descclassname">mdai.visualize.</code><code class="sig-name descname">load_dicom_image</code><span class="sig-paren">(</span><em class="sig-param">image_id</em>, <em class="sig-param">to_RGB=False</em>, <em class="sig-param">rescale=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#load_dicom_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.load_dicom_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a DICOM image.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>image_id (str):</dt><dd><p>image id (filepath).</p>
+</dd>
+<dt>to_RGB (bool, optional):</dt><dd><p>Convert grayscale image to RGB.</p>
+</dd>
 </dl>
-</div></blockquote>
-<dl class="docutils">
-<dt>Returns:</dt>
-<dd>image array.</dd>
+</dd>
+<dt>Returns:</dt><dd><p>image array.</p>
+</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="mdai.visualize.load_mask">
-<code class="descclassname">mdai.visualize.</code><code class="descname">load_mask</code><span class="sig-paren">(</span><em>image_id</em>, <em>dataset</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#load_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.load_mask" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mdai.visualize.</code><code class="sig-name descname">load_mask</code><span class="sig-paren">(</span><em class="sig-param">image_id</em>, <em class="sig-param">dataset</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#load_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.load_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load instance masks for the given image. Masks can be different types,
 mask is a binary true/false map of the same size as the image.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="mdai.visualize.random_colors">
-<code class="descclassname">mdai.visualize.</code><code class="descname">random_colors</code><span class="sig-paren">(</span><em>N</em>, <em>bright=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#random_colors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.random_colors" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mdai.visualize.</code><code class="sig-name descname">random_colors</code><span class="sig-paren">(</span><em class="sig-param">N</em>, <em class="sig-param">bright=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mdai/visualize.html#random_colors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mdai.visualize.random_colors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate random colors.
 To get visually distinct colors, generate them in HSV space then convert to RGB.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>N (int):</dt>
-<dd>Number of colors.</dd>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>N (int):</dt><dd><p>Number of colors.</p>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -495,27 +520,33 @@ To get visually distinct colors, generate them in HSV space then convert to RGB.
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2018 md.ai.
+      &copy;2019 MD.ai.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.7</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
       <a href="_sources/mdai.rst.txt"

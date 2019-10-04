@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>tests.test_preprocess &#8212; mdai-client-py  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for tests.test_preprocess</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">mdai.utils.common_utils</span> <span class="k">import</span> <span class="n">train_test_split</span>
+
+
+<div class="viewcode-block" id="test_project"><a class="viewcode-back" href="../../tests.html#tests.test_preprocess.test_project">[docs]</a><span class="k">def</span> <span class="nf">test_project</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+
+    <span class="c1"># label groups</span>
+    <span class="n">label_groups</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get_label_groups</span><span class="p">()</span>
+
+    <span class="k">assert</span> <span class="n">label_groups</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="s2">&quot;G_L3dP31&quot;</span>
+    <span class="k">assert</span> <span class="n">label_groups</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="s2">&quot;G_WVRrVJ&quot;</span></div>
+
+
+<div class="viewcode-block" id="test_dataset"><a class="viewcode-back" href="../../tests.html#tests.test_preprocess.test_dataset">[docs]</a><span class="k">def</span> <span class="nf">test_dataset</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+
+    <span class="c1"># two datasets</span>
+    <span class="n">datasets</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get_datasets</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">datasets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+
+    <span class="n">labels_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;L_egJRyg&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># bounding box</span>
+        <span class="s2">&quot;L_MgevP2&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>  <span class="c1"># polygon</span>
+        <span class="s2">&quot;L_D21YL2&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>  <span class="c1"># freeform</span>
+        <span class="s2">&quot;L_lg7klg&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>  <span class="c1"># line</span>
+        <span class="s2">&quot;L_eg69RZ&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>  <span class="c1"># location</span>
+        <span class="s2">&quot;L_GQoaJg&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>  <span class="c1"># global_image</span>
+        <span class="s2">&quot;L_JQVWjZ&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>  <span class="c1"># global_series</span>
+        <span class="s2">&quot;L_3QEOpg&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>  <span class="c1"># global_exam</span>
+    <span class="p">}</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">set_labels_dict</span><span class="p">(</span><span class="n">labels_dict</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">p</span><span class="o">.</span><span class="n">get_label_id_annotation_mode</span><span class="p">(</span><span class="s2">&quot;L_MgevP2&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;polygon&quot;</span>
+    <span class="k">assert</span> <span class="n">p</span><span class="o">.</span><span class="n">get_label_id_annotation_mode</span><span class="p">(</span><span class="s2">&quot;L_3QEOpg&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+
+    <span class="n">ct_dataset</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get_dataset_by_id</span><span class="p">(</span><span class="s2">&quot;D_qGQdpN&quot;</span><span class="p">)</span>
+    <span class="n">ct_dataset</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
+
+    <span class="n">xray_dataset</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get_dataset_by_id</span><span class="p">(</span><span class="s2">&quot;D_0Z4nDG&quot;</span><span class="p">)</span>
+    <span class="n">xray_dataset</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
+
+    <span class="k">assert</span> <span class="n">ct_dataset</span><span class="o">.</span><span class="n">classes_dict</span> <span class="o">==</span> <span class="n">xray_dataset</span><span class="o">.</span><span class="n">classes_dict</span>
+
+    <span class="n">image_ids</span> <span class="o">=</span> <span class="n">ct_dataset</span><span class="o">.</span><span class="n">get_image_ids</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">image_ids</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ct_dataset</span><span class="o">.</span><span class="n">imgs_anns_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="n">image_id</span> <span class="o">=</span> <span class="n">ct_dataset</span><span class="o">.</span><span class="n">get_image_ids</span><span class="p">()[</span><span class="mi">7</span><span class="p">]</span>
+
+    <span class="n">ann_mode</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">ct_dataset</span><span class="o">.</span><span class="n">label_id_to_class_annotation_mode</span><span class="p">(</span><span class="n">ann</span><span class="p">[</span><span class="s2">&quot;labelId&quot;</span><span class="p">]),</span> <span class="n">ann</span><span class="p">[</span><span class="s2">&quot;labelId&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">ct_dataset</span><span class="o">.</span><span class="n">imgs_anns_dict</span><span class="p">[</span><span class="n">image_id</span><span class="p">]</span>
+    <span class="p">]</span>
+
+    <span class="k">assert</span> <span class="n">ann_mode</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;line&quot;</span><span class="p">,</span> <span class="s2">&quot;L_lg7klg&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;polygon&quot;</span><span class="p">,</span> <span class="s2">&quot;L_MgevP2&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;freeform&quot;</span><span class="p">,</span> <span class="s2">&quot;L_D21YL2&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;bbox&quot;</span><span class="p">,</span> <span class="s2">&quot;L_egJRyg&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="s2">&quot;L_eg69RZ&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;L_3QEOpg&quot;</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="n">train_ds</span><span class="p">,</span> <span class="n">valid_ds</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">ct_dataset</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validation_split</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_ds</span><span class="o">.</span><span class="n">get_image_ids</span><span class="p">())</span> <span class="o">==</span> <span class="mi">9</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_ds</span><span class="o">.</span><span class="n">get_image_ids</span><span class="p">())</span> <span class="o">==</span> <span class="mi">3</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">mdai-client-py</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019 MD.ai.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

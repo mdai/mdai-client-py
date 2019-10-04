@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>mdai.utils.keras_utils &#8212; mdai-client-py  documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -13,7 +11,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -33,18 +31,24 @@
           <div class="body" role="main">
             
   <h1>Source code for mdai.utils.keras_utils</h1><div class="highlight"><pre>
-<span></span>
-<span class="kn">from</span> <span class="nn">mdai.visualize</span> <span class="k">import</span> <span class="n">load_dicom_image</span>
+<span></span><span class="kn">from</span> <span class="nn">mdai.visualize</span> <span class="k">import</span> <span class="n">load_dicom_image</span>
 <span class="kn">from</span> <span class="nn">keras.utils</span> <span class="k">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">to_categorical</span>
 
-<span class="c1"># from skimage.transform import resize</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">PIL</span> <span class="k">import</span> <span class="n">Image</span>
 
 
 <div class="viewcode-block" id="DataGenerator"><a class="viewcode-back" href="../../../mdai.utils.html#mdai.utils.keras_utils.DataGenerator">[docs]</a><span class="k">class</span> <span class="nc">DataGenerator</span><span class="p">(</span><span class="n">Sequence</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="n">n_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_classes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dataset</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+        <span class="n">dim</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>
+        <span class="n">n_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">n_classes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">to_RGB</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">rescale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates data for Keras fit_generator() function.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -60,6 +64,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span> <span class="o">=</span> <span class="n">n_channels</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_classes</span> <span class="o">=</span> <span class="n">n_classes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span> <span class="o">=</span> <span class="n">shuffle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_RGB</span> <span class="o">=</span> <span class="n">to_RGB</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rescale</span> <span class="o">=</span> <span class="n">rescale</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_epoch_end</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -95,10 +101,16 @@
 
         <span class="c1"># Generate data</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ID</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">img_ids_temp</span><span class="p">):</span>
-            <span class="n">image</span> <span class="o">=</span> <span class="n">load_dicom_image</span><span class="p">(</span><span class="n">ID</span><span class="p">,</span> <span class="n">to_RGB</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">load_dicom_image</span><span class="p">(</span><span class="n">ID</span><span class="p">,</span> <span class="n">to_RGB</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">to_RGB</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rescale</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="s2">&quot;Pil.Image can&#39;t read image. Possible 12 or 16 bit image. Try rescale=True to &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;scale to 8 bit.&quot;</span>
+                <span class="p">)</span>
+
             <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">resize</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-            <span class="c1"># image = resize(image, (self.dim[0], self.dim[1]))</span>
 
             <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">,]</span> <span class="o">=</span> <span class="n">image</span>
 
@@ -134,27 +146,33 @@
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2018 md.ai.
+      &copy;2019 MD.ai.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.7</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
     </div>
 

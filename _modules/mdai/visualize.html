@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>mdai.visualize &#8212; mdai-client-py  documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -13,7 +11,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
@@ -33,18 +31,14 @@
           <div class="body" role="main">
             
   <h1>Source code for mdai.visualize</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">pydicom</span>
+<span></span><span class="kn">import</span> <span class="nn">pydicom</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">colorsys</span>
 <span class="kn">import</span> <span class="nn">random</span>
-
 <span class="kn">import</span> <span class="nn">cv2</span>
-
 <span class="kn">from</span> <span class="nn">skimage.measure</span> <span class="k">import</span> <span class="n">find_contours</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">patches</span><span class="p">,</span> <span class="n">lines</span>
-<span class="kn">from</span> <span class="nn">matplotlib.patches</span> <span class="k">import</span> <span class="n">Polygon</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">patches</span>
 
 
 <div class="viewcode-block" id="random_colors"><a class="viewcode-back" href="../../mdai.html#mdai.visualize.random_colors">[docs]</a><span class="k">def</span> <span class="nf">random_colors</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">bright</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -63,7 +57,7 @@
 
 
 <span class="c1"># based on functions in: https://github.com/matterport/Mask_RCNN/blob/master/mrcnn/visualize.py</span>
-<div class="viewcode-block" id="display_images"><a class="viewcode-back" href="../../mdai.html#mdai.visualize.display_images">[docs]</a><span class="k">def</span> <span class="nf">display_images</span><span class="p">(</span><span class="n">image_ids</span><span class="p">,</span> <span class="n">titles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="display_images"><a class="viewcode-back" href="../../mdai.html#mdai.visualize.display_images">[docs]</a><span class="k">def</span> <span class="nf">display_images</span><span class="p">(</span><span class="n">image_ids</span><span class="p">,</span> <span class="n">titles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Display images given image ids.</span>
 
 <span class="sd">    Args:</span>
@@ -81,19 +75,16 @@
         <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
 
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">pydicom</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">image_id</span><span class="p">)</span>
-        <span class="n">image</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">pixel_array</span>
-        <span class="c1"># If grayscale. Convert to RGB for consistency.</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="ow">or</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">image</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">load_dicom_image</span><span class="p">(</span><span class="n">image_id</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span>
 
         <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="load_dicom_image"><a class="viewcode-back" href="../../mdai.html#mdai.visualize.load_dicom_image">[docs]</a><span class="k">def</span> <span class="nf">load_dicom_image</span><span class="p">(</span><span class="n">image_id</span><span class="p">,</span> <span class="n">to_RGB</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="load_dicom_image"><a class="viewcode-back" href="../../mdai.html#mdai.visualize.load_dicom_image">[docs]</a><span class="k">def</span> <span class="nf">load_dicom_image</span><span class="p">(</span><span class="n">image_id</span><span class="p">,</span> <span class="n">to_RGB</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Load a DICOM image.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        image_id (str):</span>
 <span class="sd">            image id (filepath).</span>
@@ -103,8 +94,27 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        image array.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">pydicom</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">image_id</span><span class="p">)</span>
-    <span class="n">image</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">pixel_array</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">pydicom</span><span class="o">.</span><span class="n">dcmread</span><span class="p">(</span><span class="n">image_id</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">pixel_array</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Could not read pixel array from DICOM with TransferSyntaxUID &quot;</span>
+            <span class="o">+</span> <span class="n">ds</span><span class="o">.</span><span class="n">file_meta</span><span class="o">.</span><span class="n">TransferSyntaxUID</span>
+            <span class="o">+</span> <span class="s2">&quot;. Likely unsupported compression format.&quot;</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rescale</span><span class="p">:</span>
+        <span class="n">max_pixel_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="n">min_pixel_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">max_pixel_value</span> <span class="o">&gt;=</span> <span class="mi">255</span><span class="p">:</span>
+            <span class="c1"># print(&quot;Input image pixel range exceeds 255, rescaling for visualization.&quot;)</span>
+            <span class="n">pixel_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">max_pixel_value</span> <span class="o">-</span> <span class="n">min_pixel_value</span><span class="p">)</span>
+            <span class="n">pixel_range</span> <span class="o">=</span> <span class="n">pixel_range</span> <span class="k">if</span> <span class="n">pixel_range</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="n">pixel_range</span> <span class="o">*</span> <span class="mi">255</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">to_RGB</span><span class="p">:</span>
         <span class="c1"># If grayscale. Convert to RGB for consistency.</span>
@@ -140,7 +150,7 @@
 
             <span class="n">label_id</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;labelId&quot;</span><span class="p">]</span>
             <span class="n">annotation_mode</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">label_id_to_class_annotation_mode</span><span class="p">(</span><span class="n">label_id</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">annotation_mode</span><span class="p">)</span>
+            <span class="c1"># print(annotation_mode)</span>
 
             <span class="k">if</span> <span class="n">annotation_mode</span> <span class="o">==</span> <span class="s2">&quot;bbox&quot;</span><span class="p">:</span>
                 <span class="c1"># Bounding Box</span>
@@ -185,7 +195,7 @@
     <span class="k">return</span> <span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">),</span> <span class="n">class_ids</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="apply_mask"><a class="viewcode-back" href="../../mdai.html#mdai.visualize.apply_mask">[docs]</a><span class="k">def</span> <span class="nf">apply_mask</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<div class="viewcode-block" id="apply_mask"><a class="viewcode-back" href="../../mdai.html#mdai.visualize.apply_mask">[docs]</a><span class="k">def</span> <span class="nf">apply_mask</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Apply the given mask to the image.</span>
 
 <span class="sd">    Args:</span>
@@ -241,18 +251,16 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        image:</span>
 <span class="sd">            [height, width, 3]</span>
-
-<span class="sd">        shape:</span>
-<span class="sd">            the original shape of the image before resizing and cropping.</span>
 <span class="sd">        class_ids:</span>
 <span class="sd">            [instance_count] Integer class IDs</span>
 <span class="sd">        bbox:</span>
 <span class="sd">            [instance_count, (y1, x1, y2, x2)]</span>
 <span class="sd">        mask:</span>
 <span class="sd">            [height, width, instance_count]. The height and width are those of the image unless</span>
-<span class="sd">        use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.</span>
+<span class="sd">            use_mini_mask is True, in which case they are defined in MINI_MASK_SHAPE.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">image</span> <span class="o">=</span> <span class="n">load_dicom_image</span><span class="p">(</span><span class="n">image_id</span><span class="p">,</span> <span class="n">to_RGB</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># image = load_dicom_image(image_id, to_RGB=True)</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">load_dicom_image</span><span class="p">(</span><span class="n">image_id</span><span class="p">,</span> <span class="n">to_RGB</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">mask</span><span class="p">,</span> <span class="n">class_ids</span> <span class="o">=</span> <span class="n">load_mask</span><span class="p">(</span><span class="n">image_id</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
 
@@ -356,7 +364,6 @@
             <span class="n">score</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">scores</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
 
             <span class="n">label</span> <span class="o">=</span> <span class="n">class_id</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="p">(</span><span class="n">x1</span> <span class="o">+</span> <span class="n">x2</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
             <span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">score</span><span class="p">)</span> <span class="k">if</span> <span class="n">score</span> <span class="k">else</span> <span class="n">label</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">caption</span> <span class="o">=</span> <span class="n">captions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -375,9 +382,10 @@
         <span class="k">for</span> <span class="n">verts</span> <span class="ow">in</span> <span class="n">contours</span><span class="p">:</span>
             <span class="c1"># Subtract the padding and flip (y, x) to (x, y)</span>
             <span class="n">verts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fliplr</span><span class="p">(</span><span class="n">verts</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-            <span class="n">p</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">(</span><span class="n">verts</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">patches</span><span class="o">.</span><span class="n">Polygon</span><span class="p">(</span><span class="n">verts</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">masked_image</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">))</span>
+    <span class="c1"># ax.imshow(masked_image)</span>
     <span class="k">if</span> <span class="n">auto_show</span><span class="p">:</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
 
@@ -435,27 +443,33 @@
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2018 md.ai.
+      &copy;2019 MD.ai.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.7</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
     </div>
 
