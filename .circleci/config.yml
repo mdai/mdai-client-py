@@ -67,10 +67,10 @@ jobs:
       - run:
           name: Release
           command: |
-            cat $PYPIRC_CONTENTS | base64 --decode > ~/.pypirc
-            poetry run pip install twine
+            echo $PYPIRC_CONTENTS | base64 --decode > ~/.pypirc
+            poetry run pip install twine wheel
             poetry run python setup.py sdist bdist_wheel
-            twine upload dist/*
+            poetry run twine upload dist/*
 
 workflows:
   version: 2
