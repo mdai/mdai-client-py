@@ -17,7 +17,7 @@ def train_test_split(dataset, shuffle=True, validation_split=0.1):
     TODO: What to set for images_dir for combined dataset?
     """
     if validation_split < 0.0 or validation_split > 1.0:
-        raise ValueError("{} is not a valid split ratio.".format(validation_split))
+        raise ValueError(f"{validation_split} is not a valid split ratio.")
 
     image_ids_list = dataset.get_image_ids()
     if shuffle:
@@ -128,7 +128,7 @@ def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=Fa
 
     a = a.merge(label_groups, on="labelId", sort=False)
     a = a.merge(studies[["StudyInstanceUID", "number"]], on="StudyInstanceUID", sort=False)
-    if should_return_labels == True:
+    if should_return_labels:
         return a, studies, label_groups
     else:
         return a, studies

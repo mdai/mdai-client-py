@@ -10,7 +10,7 @@ To get started, check out the examples in the [notebooks section](notebooks), or
 
 ## Installation
 
-Install and update using [pip](https://pip.pypa.io/en/stable/quickstart/):
+Requires Python 3.6+. Install and update using [pip](https://pip.pypa.io/en/stable/quickstart/):
 
 ```sh
 pip install --upgrade mdai

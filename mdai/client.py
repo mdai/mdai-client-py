@@ -31,7 +31,7 @@ class Client:
     def __init__(self, domain="public.md.ai", access_token=None):
         domain_pattern = r"^\w+\.md\.ai(:\d+)?$"
         if not re.match(domain_pattern, domain):
-            raise ValueError("domain {} is invalid: should be format *.md.ai".format(domain))
+            raise ValueError(f"domain {domain} is invalid: should be format *.md.ai")
 
         self.domain = domain
         self.access_token = access_token
@@ -49,7 +49,7 @@ class Client:
             print("Using working directory for data.")
         else:
             os.makedirs(path, exist_ok=True)
-            print("Using path '{}' for data.".format(path))
+            print(f"Using path '{path}' for data.")
 
         data_manager_kwargs = {
             "domain": self.domain,
@@ -118,10 +118,10 @@ class Client:
     def _test_endpoint(self):
         """Checks endpoint for validity and authorization.
         """
-        test_endpoint = "https://{}/api/test".format(self.domain)
+        test_endpoint = f"https://{self.domain}/api/test"
         r = self.session.get(test_endpoint, headers=self._create_headers())
         if r.status_code == 200:
-            print("Successfully authenticated to {}.".format(self.domain))
+            print(f"Successfully authenticated to {self.domain}.")
         else:
             raise Exception("Authorization error. Make sure your access token is valid.")
 
@@ -134,7 +134,7 @@ class Client:
     def _gql(self, query, variables=None):
         """Executes GraphQL query.
         """
-        gql_endpoint = "https://{}/api/graphql".format(self.domain)
+        gql_endpoint = f"https://{self.domain}/api/graphql"
         headers = self._create_headers()
         headers["Accept"] = "application/json"
         headers["Content-Type"] = "application/json"
@@ -172,7 +172,7 @@ class ProjectDataManager:
         if not project_id:
             raise ValueError("project_id is not specified.")
         if not os.path.exists(path):
-            raise OSError("Path '{}' does not exist.".format(path))
+            raise OSError(f"Path '{path}' does not exist.")
 
         self.data_type = data_type
         self.force_download = force_download
@@ -195,17 +195,17 @@ class ProjectDataManager:
         """Create data export job through MD.ai API.
         This is an async operation. Status code of 202 indicates successful creation of job.
         """
-        endpoint = "https://{}/api/data-export/{}".format(self.domain, self.data_type)
+        endpoint = f"https://{self.domain}/api/data-export/{self.data_type}"
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code == 202:
-            msg = "Preparing {} export for project {}...".format(self.data_type, self.project_id)
+            msg = f"Preparing {self.data_type} export for project {self.project_id}..."
             print(msg.ljust(100))
             self._check_data_export_job_progress()
         else:
             if r.status_code == 401:
                 msg = (
-                    "Project {} at domain {}".format(self.project_id, self.domain)
+                    f"Project {self.project_id} at domain {self.domain}"
                     + " does not exist or you do not have sufficient permissions for access."
                 )
                 print(msg)
@@ -235,7 +235,7 @@ class ProjectDataManager:
     def _check_data_export_job_progress(self):
         """Poll for data export job progress.
         """
-        endpoint = "https://{}/api/data-export/{}/progress".format(self.domain, self.data_type)
+        endpoint = f"https://{self.domain}/api/data-export/{self.data_type}/progress"
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
@@ -267,10 +267,11 @@ class ProjectDataManager:
                 else:
                     # arrow humanizes <= 45 to 'in seconds' or 'just now',
                     # so we will opt to be explicit instead.
-                    time_remaining_fmt = "in {} seconds".format(time_remaining)
+                    time_remaining_fmt = f"in {time_remaining} seconds"
                 end_char = "\r" if progress < 100 else "\n"
-                msg = "Exporting {} for project {}...{}% (time remaining: {}).".format(
-                    self.data_type, self.project_id, progress, time_remaining_fmt
+                msg = (
+                    f"Exporting {self.data_type} for project {self.project_id}..."
+                    + f"{progress}% (time remaining: {time_remaining_fmt})."
                 )
                 print(msg.ljust(100), end=end_char, flush=True)
 
@@ -292,7 +293,7 @@ class ProjectDataManager:
         stop_max_attempt_number=10,
     )
     def _on_data_export_job_done(self):
-        endpoint = "https://{}/api/data-export/{}/done".format(self.domain, self.data_type)
+        endpoint = f"https://{self.domain}/api/data-export/{self.data_type}/done"
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
@@ -310,11 +311,7 @@ class ProjectDataManager:
                 else:
                     # use existing data
                     self.data_path = data_path
-                    print(
-                        "Using cached {} data for project {}.".format(
-                            self.data_type, self.project_id
-                        )
-                    )
+                    print(f"Using cached {self.data_type} data for project {self.project_id}.")
                     # fire ready threading.Event
                     self._ready.set()
         except (TypeError, KeyError):
@@ -327,12 +324,12 @@ class ProjectDataManager:
         stop_max_attempt_number=10,
     )
     def _on_data_export_job_error(self):
-        endpoint = "https://{}/api/data-export/{}/error".format(self.domain, self.data_type)
+        endpoint = f"https://{self.domain}/api/data-export/{self.data_type}/error"
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
             r.raise_for_status()
-        print("Error exporting {} for project {}.".format(self.data_type, self.project_id))
+        print(f"Error exporting {self.data_type} for project {self.project_id}.")
         # fire ready threading.Event
         self._ready.set()
 
@@ -352,12 +349,11 @@ class ProjectDataManager:
         """Downloads files via signed URL requested from MD.ai API.
         """
         for file_key in file_keys:
-            print("Downloading file: {}".format(file_key))
+            print(f"Downloading file: {file_key}")
             filepath = os.path.join(self.path, file_key)
 
-            url = "https://{}/api/project-files/signedurl/get?key={}".format(
-                self.domain, requests.utils.quote(file_key)
-            )
+            key = requests.utils.quote(file_key)
+            url = f"https://{self.domain}/api/project-files/signedurl/get?key={key}"
 
             # stream response so we can display progress bar
             r = requests.get(url, stream=True, headers=self.headers)
@@ -373,17 +369,17 @@ class ProjectDataManager:
                         wrote = wrote + len(chunk)
                         pbar.update(block_size)
             if total_size != 0 and wrote != total_size:
-                raise IOError("Error downloading file {}.".format(file_key))
+                raise IOError(f"Error downloading file {file_key}.")
 
             if self.data_type == "images":
                 # unzip archive
-                print("Extracting archive: {}".format(file_key))
+                print(f"Extracting archive: {file_key}")
                 with zipfile.ZipFile(filepath, "r") as f:
                     f.extractall(self.path)
 
         self.data_path = self._get_data_path(file_keys)
 
-        print("Success: {} data for project {} ready.".format(self.data_type, self.project_id))
+        print(f"Success: {self.data_type} data for project {self.project_id} ready.")
 
         # fire ready threading.Event
         self._ready.set()
@@ -428,7 +424,7 @@ class AnnotationsImportManager:
         """Create annotations import job through MD.ai API.
         This is an async operation. Status code of 202 indicates successful creation of job.
         """
-        endpoint = "https://{}/api/data-import/annotations".format(self.domain)
+        endpoint = f"https://{self.domain}/api/data-import/annotations"
         params = {
             "projectHashId": self.project_id,
             "datasetHashId": self.dataset_id,
@@ -438,12 +434,10 @@ class AnnotationsImportManager:
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code == 202:
             self.job_id = r.json()["jobId"]
-            msg = "Importing {} annotations into project {}".format(
-                len(self.annotations), self.project_id
-            )
-            msg += ", dataset {}".format(self.dataset_id)
+            msg = f"Importing {len(self.annotations)} annotations into project {self.project_id}"
+            msg += f", dataset {self.dataset_id}"
             if self.model_id:
-                msg += ", model {}...".format(self.model_id)
+                msg += f", model {self.model_id}..."
             else:
                 msg += "..."
             print(msg.ljust(100))
@@ -467,7 +461,7 @@ class AnnotationsImportManager:
     def _check_job_progress(self):
         """Poll for annotations import job progress.
         """
-        endpoint = "https://{}/api/data-import/annotations/progress".format(self.domain)
+        endpoint = f"https://{self.domain}/api/data-import/annotations/progress"
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
@@ -499,10 +493,11 @@ class AnnotationsImportManager:
                 else:
                     # arrow humanizes <= 45 to 'in seconds' or 'just now',
                     # so we will opt to be explicit instead.
-                    time_remaining_fmt = "in {} seconds".format(time_remaining)
+                    time_remaining_fmt = f"in {time_remaining} seconds"
                 end_char = "\r" if progress < 100 else "\n"
-                msg = "Annotations import for project {}...{}% (time remaining: {}).".format(
-                    self.project_id, progress, time_remaining_fmt
+                msg = (
+                    f"Annotations import for project {self.project_id}..."
+                    + f"{progress}% (time remaining: {time_remaining_fmt})."
                 )
                 print(msg.ljust(100), end=end_char, flush=True)
 
@@ -524,12 +519,12 @@ class AnnotationsImportManager:
         stop_max_attempt_number=10,
     )
     def _on_job_done(self):
-        endpoint = "https://{}/api/data-import/annotations/done".format(self.domain)
+        endpoint = f"https://{self.domain}/api/data-import/annotations/done"
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
             r.raise_for_status()
-        print("Successfully imported annotations into project {}.".format(self.project_id))
+        print(f"Successfully imported annotations into project {self.project_id}.")
         # fire ready threading.Event
         self._ready.set()
 
@@ -540,11 +535,11 @@ class AnnotationsImportManager:
         stop_max_attempt_number=10,
     )
     def _on_job_error(self):
-        endpoint = "https://{}/api/data-import/annotations/error".format(self.domain)
+        endpoint = f"https://{self.domain}/api/data-import/annotations/error"
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
             r.raise_for_status()
-        print("Error importing annotations into project {}.".format(self.project_id))
+        print(f"Error importing annotations into project {self.project_id}.")
         # fire ready threading.Event
         self._ready.set()

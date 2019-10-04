@@ -72,14 +72,13 @@ class Project:
         for dataset in self.datasets:
             if dataset.name == dataset_name:
                 return dataset
-
-        raise ValueError("Dataset name {} does not exist.".format(dataset_name))
+        raise ValueError(f"Dataset name {dataset_name} does not exist.")
 
     def get_dataset_by_id(self, dataset_id):
         for dataset in self.datasets:
             if dataset.id == dataset_id:
                 return dataset
-        raise ValueError("Dataset id {} does not exist.".format(dataset_id))
+        raise ValueError(f"Dataset id {dataset_id} does not exist.")
 
     def set_labels_dict(self, labels_dict):
 
@@ -95,7 +94,7 @@ class Project:
             for label in labels_data:
                 if label["id"] == label_id:
                     return label["annotationMode"]
-        raise ValueError("Label id {} does not exist.".format(label_id))
+        raise ValueError(f"Label id {label_id} does not exist.")
 
     def get_label_id_type(self, label_id):
         "Return label id's type."
@@ -104,7 +103,7 @@ class Project:
             for label in labels_data:
                 if label["id"] == label_id:
                     return label["type"]
-        raise ValueError("Label id {} does not exist.".format(label_id))
+        raise ValueError(f"Label id {label_id} does not exist.")
 
     def get_label_id_scope(self, label_id):
         "Return label id's scope."
@@ -113,7 +112,7 @@ class Project:
             for label in labels_data:
                 if label["id"] == label_id:
                     return label["scope"]
-        raise ValueError("Label id {} does not exist.".format(label_id))
+        raise ValueError(f"Label id {label_id} does not exist.")
 
     def _create_classes_dict(self, labels_dict):
         """Create a dict with label id as key, and a nested dict of class_id, and class_text as \
@@ -136,7 +135,7 @@ class Project:
                     if label["id"] == label_id:
                         if class_id == 0 and label["type"].lower() == "local":
                             raise Exception(
-                                "{} is a local type, its class id cannot be 0.".format(label_id)
+                                f"{label_id} is a local type, its class id cannot be 0."
                             )
                         classes_dict[label_id] = {
                             "class_id": class_id,
@@ -150,7 +149,7 @@ class Project:
             in_labels = labels_dict.keys()
             out_labels = classes_dict.keys()
             diff = set(in_labels).symmetric_difference(out_labels)
-            raise ValueError("Labels {} are not valid for this dataset.".format(diff))
+            raise ValueError(f"Labels {diff} are not valid for this dataset.")
 
         return classes_dict
 
@@ -186,9 +185,9 @@ class LabelGroup:
 
     def show_labels(self, print_offset=""):
         """Show labels info"""
-        print("{}Labels:".format(print_offset))
+        print(f"{print_offset}Labels:")
         for label in self.label_group_data["labels"]:
-            print("{}Id: {}, Name: {}".format(print_offset, label["id"], label["name"]))
+            print(f"{print_offset}Id: {label['id']}, Name: {label['name']}")
         print("")
 
 
@@ -248,9 +247,8 @@ class Dataset:
 
         if verbose:
             print(
-                "Dataset contains {} annotations, filtered by label ids {}.".format(
-                    len(ann_filtered), label_ids
-                )
+                f"Dataset contains {len(ann_filtered)} annotations"
+                + f", filtered by label ids {label_ids}."
             )
         return ann_filtered
 
@@ -281,15 +279,13 @@ class Dataset:
                 self.images_dir, ann["StudyInstanceUID"], ann["SeriesInstanceUID"]
             )
             uid = [image_id for image_id in self.all_image_ids if image_id.startswith(prefix)]
-            # print("SeriesInstanceUID {}, uid {}".format(ann["SeriesInstanceUID"], uid))
             return uid
         elif "StudyInstanceUID" in ann:
             prefix = os.path.join(self.images_dir, ann["StudyInstanceUID"])
             uid = [image_id for image_id in self.all_image_ids if image_id.startswith(prefix)]
-            # print("StudyInstanceUID {}, uid {}".format(ann["StudyInstanceUID"], uid))
             return uid
         else:
-            raise ValueError("Unable to create UID from {}".format(ann))
+            raise ValueError(f"Unable to create UID from {ann}")
 
     def get_image_ids(self, verbose=False):
         """Returns image ids. Must call prepare() method first in order to generate image ids.
@@ -303,9 +299,8 @@ class Dataset:
 
         if verbose:
             print(
-                "Dataset contains {} images, filtered by label ids {}.".format(
-                    len(self.image_ids), self.classes_dict.keys()
-                )
+                f"Dataset contains {len(self.image_ids)} images"
+                + f", filtered by label ids {self.classes_dict.keys()}."
             )
         return self.image_ids
 
@@ -335,7 +330,7 @@ class Dataset:
 
     def get_annotations_by_image_id(self, image_id):
         if image_id not in self.image_ids:
-            raise ValueError("Image id {} is not found in dataset {}.".format(image_id, self.name))
+            raise ValueError(f"Image id {image_id} is not found in dataset {self.name}.")
 
         return self.imgs_anns_dict[image_id]
 
@@ -372,30 +367,26 @@ class Dataset:
             if v["class_id"] == class_id:
                 return v["class_text"]
 
-        raise Exception("class_id {} is invalid.".format(class_id))
+        raise Exception(f"class_id {class_id} is invalid.")
 
     def class_text_to_class_id(self, class_text):
         for k, v in self.classes_dict.items():
             if v["class_text"] == class_text:
                 return v["class_id"]
-        raise Exception("class_text {} is invalid.".format(class_text))
+        raise Exception(f"class_text {class_text} is invalid.")
 
     def label_id_to_class_id(self, label_id):
         for k, v in self.classes_dict.items():
             if k == label_id:
                 return v["class_id"]
-        raise Exception("label_id {} is invalid.".format(label_id))
+        raise Exception(f"label_id {label_id} is invalid.")
 
     def label_id_to_class_annotation_mode(self, label_id):
         for k, v in self.classes_dict.items():
             if k == label_id:
                 return v["class_annotation_mode"]
-        raise Exception("label_id {} is invalid.".format(label_id))
+        raise Exception(f"label_id {label_id} is invalid.")
 
     def show_classes(self):
         for k, v in self.classes_dict.items():
-            print(
-                "Label id: {}, Class id: {}, Class text: {}".format(
-                    k, v["class_id"], v["class_text"]
-                )
-            )
+            print(f"Label id: {k}, Class id: {v['class_id']}, Class text: {v['class_text']}")

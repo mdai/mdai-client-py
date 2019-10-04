@@ -14,7 +14,7 @@ setup(
     author="MD.ai",
     author_email="github@md.ai",
     url="https://github.com/mdai/mdai-client-py",
-    download_url="https://github.com/mdai/mdai-client-py/tarball/{}".format(__version__),
+    download_url=f"https://github.com/mdai/mdai-client-py/tarball/{__version__}",
     license="Apache-2.0",
     install_requires=[
         "arrow",
@@ -37,6 +37,7 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Scientific/Engineering :: Medical Science Apps.",
