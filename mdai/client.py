@@ -1,6 +1,7 @@
 import os
 import threading
 import re
+import math
 import zipfile
 import requests
 import urllib3.exceptions
@@ -17,6 +18,9 @@ def retry_on_http_error(exception):
         urllib3.exceptions.HTTPError,
     ]
     return any([isinstance(exception, e) for e in valid_exceptions])
+
+
+ANNOTATIONS_IMPORT_PAGE_SIZE = 100000
 
 
 class Client:
@@ -83,17 +87,27 @@ class Client:
             model_id: hash ID of machine learning model.
             annotations: list of annotations to load.
         """
-        manager = AnnotationsImportManager(
-            domain=self.domain,
-            project_id=project_id,
-            dataset_id=dataset_id,
-            model_id=model_id,
-            annotations=annotations,
-            session=self.session,
-            headers=self._create_headers(),
-        )
-        manager.create_job()
-        manager.wait_until_ready()
+        num_pages = math.ceil(len(annotations) / ANNOTATIONS_IMPORT_PAGE_SIZE)
+
+        if num_pages > 1:
+            print(f"Importing {len(annotations)} total annotations in {num_pages} chunks...")
+
+        for i in range(num_pages):
+            start = i * ANNOTATIONS_IMPORT_PAGE_SIZE
+            end = (i + 1) * ANNOTATIONS_IMPORT_PAGE_SIZE
+            annotations_page = annotations[start:end]
+
+            manager = AnnotationsImportManager(
+                domain=self.domain,
+                project_id=project_id,
+                dataset_id=dataset_id,
+                model_id=model_id,
+                annotations=annotations_page,
+                session=self.session,
+                headers=self._create_headers(),
+            )
+            manager.create_job()
+            manager.wait_until_ready()
 
     def _create_headers(self):
         headers = {}
@@ -424,20 +438,20 @@ class AnnotationsImportManager:
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code == 202:
             self.job_id = r.json()["jobId"]
-            msg = (
-                "Importing annotations into project {}, ".format(self.project_id)
-                + "dataset {}, ".format(self.dataset_id)
-                + "model {}...".format(self.model_id)
+            msg = "Importing {} annotations into project {}".format(
+                len(self.annotations), self.project_id
             )
+            msg += ", dataset {}".format(self.dataset_id)
+            if self.model_id:
+                msg += ", model {}...".format(self.model_id)
+            else:
+                msg += "..."
             print(msg.ljust(100))
             self._check_job_progress()
         else:
             print(r.status_code)
             if r.status_code == 401:
-                msg = (
-                    "Project, dataset, or model does not exist, "
-                    + "or you do not have sufficient permissions."
-                )
+                msg = "Provided IDs are invalid, or you do not have sufficient permissions."
                 print(msg)
             self._on_job_error()
 
