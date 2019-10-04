@@ -20,7 +20,7 @@ def retry_on_http_error(exception):
     return any([isinstance(exception, e) for e in valid_exceptions])
 
 
-ANNOTATIONS_IMPORT_PAGE_SIZE = 100000
+ANNOTATIONS_IMPORT_DEFAULT_CHUNK_SIZE = 100000
 
 
 class Client:
@@ -78,32 +78,54 @@ class Client:
             print("No project created. Downloaded annotations only.")
             return None
 
-    def load_model_annotations(self, project_id, dataset_id, model_id, annotations):
-        """Method for loading machine learning model results into project as annotations.
+    def load_model_annotations(self):
+        """Deprecated method: use `import_annotations` instead.
+        """
+        print("Deprecated method: use `import_annotations` instead.")
+
+    def import_annotations(
+        self,
+        annotations,
+        project_id,
+        dataset_id,
+        model_id=None,
+        chunk_size=ANNOTATIONS_IMPORT_DEFAULT_CHUNK_SIZE,
+    ):
+        """Import annotations into project.
+        For example, this method can be used to load machine learning model results into project as
+        annotations, or quickly populate metadata labels.
 
         Arguments:
             project_id: hash ID of project.
             dataset_id: hash ID of machine learning model.
             model_id: hash ID of machine learning model.
             annotations: list of annotations to load.
+            chunk_size: number of annotations to load as a chunk.
         """
-        num_pages = math.ceil(len(annotations) / ANNOTATIONS_IMPORT_PAGE_SIZE)
+        if not annotations:
+            print(f"No annotations provided.")
+        if not project_id:
+            print(f"project_id is required.")
+        if not dataset_id:
+            print(f"dataset_id is required.")
 
-        if num_pages > 1:
-            print(f"Importing {len(annotations)} total annotations in {num_pages} chunks...")
+        num_chunks = math.ceil(len(annotations) / chunk_size)
 
-        for i in range(num_pages):
-            start = i * ANNOTATIONS_IMPORT_PAGE_SIZE
-            end = (i + 1) * ANNOTATIONS_IMPORT_PAGE_SIZE
-            annotations_page = annotations[start:end]
+        if num_chunks > 1:
+            print(f"Importing {len(annotations)} total annotations in {num_chunks} chunks...")
+
+        for i in range(num_chunks):
+            start = i * chunk_size
+            end = (i + 1) * chunk_size
+            annotations_chunk = annotations[start:end]
 
             manager = AnnotationsImportManager(
-                domain=self.domain,
+                annotations=annotations_chunk,
                 project_id=project_id,
                 dataset_id=dataset_id,
                 model_id=model_id,
-                annotations=annotations_page,
                 session=self.session,
+                domain=self.domain,
                 headers=self._create_headers(),
             )
             manager.create_job()
@@ -391,12 +413,12 @@ class AnnotationsImportManager:
 
     def __init__(
         self,
-        domain=None,
+        annotations=None,
         project_id=None,
         dataset_id=None,
         model_id=None,
-        annotations=None,
         session=None,
+        domain=None,
         headers=None,
     ):
         if not domain:
@@ -404,15 +426,15 @@ class AnnotationsImportManager:
         if not project_id:
             raise ValueError("project_id is not specified.")
 
-        self.domain = domain
+        self.annotations = annotations
         self.project_id = project_id
         self.dataset_id = dataset_id
         self.model_id = model_id
-        self.annotations = annotations
         if session and isinstance(session, requests.Session):
             self.session = session
         else:
             self.session = requests.Session()
+        self.domain = domain
         self.headers = headers
 
         self.job_id = None
