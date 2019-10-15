@@ -62,71 +62,72 @@ def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=Fa
 
     a = pd.DataFrame([])
     studies = pd.DataFrame([])
+    label_groups = None
+
+    def addDataset(d):
+        study = pd.DataFrame(d["studies"])
+        study["dataset"] = d["name"]
+        studies = studies.append(study, ignore_index=True, sort=False)
+
+        annots = pd.DataFrame(d["annotations"])
+        annots["dataset"] = d["name"]
+        a = a.append(annots, ignore_index=True, sort=False)
 
     # Gets annotations for all datasets
     if dataset == "all_datasets":
         for d in data["datasets"]:
-            annots = pd.DataFrame(d["annotations"])
-            annots["dataset"] = d["name"]
-            study = pd.DataFrame(d["studies"])
-            study["dataset"] = d["name"]
-            a = a.append(annots, ignore_index=True, sort=False)
-            studies = studies.append(study, ignore_index=True, sort=False)
+            addDataset(d)   
     else:
         for d in data["datasets"]:
             if d["name"] == dataset:
-                annots = pd.DataFrame(d["annotations"])
-                annots["dataset"] = d["name"]
-                study = pd.DataFrame(d["studies"])
-                study["dataset"] = d["name"]
-                a = a.append(annots, ignore_index=True, sort=False)
-                studies = studies.append(study, ignore_index=True, sort=False)
+                addDataset(d)
 
-    studies = studies[["StudyInstanceUID", "dataset", "number"]]
+    if len(studies) > 0:
+        studies = studies[["StudyInstanceUID", "dataset", "number"]]
     g = pd.DataFrame(data["labelGroups"])
+    if len(g) > 0:
+        # unpack arrays
+        result = pd.DataFrame([(d, tup.id, tup.name) for tup in g.itertuples() for d in tup.labels])
+        result.columns = ["labels", "id", "name"]
 
-    # unpack arrays
-    result = pd.DataFrame([(d, tup.id, tup.name) for tup in g.itertuples() for d in tup.labels])
-    result.columns = ["labels", "id", "name"]
+        def unpack_dictionary(df, column):
+            ret = None
+            ret = pd.concat(
+                [df, pd.DataFrame((d for idx, d in df[column].iteritems()))], axis=1, sort=False
+            )
+            del ret[column]
+            return ret
 
-    def unpack_dictionary(df, column):
-        ret = None
-        ret = pd.concat(
-            [df, pd.DataFrame((d for idx, d in df[column].iteritems()))], axis=1, sort=False
-        )
-        del ret[column]
-        return ret
-
-    label_groups = unpack_dictionary(result, "labels")
-    label_groups.columns = [
-        "groupId",
-        "groupName",
-        "annotationMode",
-        "color",
-        "createdAt",
-        "description",
-        "labelId",
-        "labelName",
-        "radlexTagIdsLabel",
-        "scope",
-        "type",
-        "updatedAt",
-    ]
-    label_groups = label_groups[
-        [
+        label_groups = unpack_dictionary(result, "labels")
+        label_groups.columns = [
             "groupId",
             "groupName",
             "annotationMode",
             "color",
+            "createdAt",
             "description",
             "labelId",
             "labelName",
             "radlexTagIdsLabel",
             "scope",
+            "type",
+            "updatedAt",
         ]
-    ]
+        label_groups = label_groups[
+            [
+                "groupId",
+                "groupName",
+                "annotationMode",
+                "color",
+                "description",
+                "labelId",
+                "labelName",
+                "radlexTagIdsLabel",
+                "scope",
+            ]
+        ]
 
-    a = a.merge(label_groups, on="labelId", sort=False)
+        a = a.merge(label_groups, on="labelId", sort=False)
     a = a.merge(studies[["StudyInstanceUID", "number"]], on="StudyInstanceUID", sort=False)
     if should_return_labels:
         return a, studies, label_groups
