@@ -64,23 +64,26 @@ def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=Fa
     studies = pd.DataFrame([])
     label_groups = None
 
-    def addDataset(d):
-        study = pd.DataFrame(d["studies"])
-        study["dataset"] = d["name"]
-        studies = studies.append(study, ignore_index=True, sort=False)
-
-        annots = pd.DataFrame(d["annotations"])
-        annots["dataset"] = d["name"]
-        a = a.append(annots, ignore_index=True, sort=False)
-
     # Gets annotations for all datasets
     if dataset == "all_datasets":
         for d in data["datasets"]:
-            addDataset(d)   
+            study = pd.DataFrame(d["studies"])
+            study["dataset"] = d["name"]
+            studies = studies.append(study, ignore_index=True, sort=False)
+
+            annots = pd.DataFrame(d["annotations"])
+            annots["dataset"] = d["name"]
+            a = a.append(annots, ignore_index=True, sort=False)   
     else:
         for d in data["datasets"]:
             if d["name"] == dataset:
-                addDataset(d)
+                study = pd.DataFrame(d["studies"])
+                study["dataset"] = d["name"]
+                studies = studies.append(study, ignore_index=True, sort=False)
+
+                annots = pd.DataFrame(d["annotations"])
+                annots["dataset"] = d["name"]
+                a = a.append(annots, ignore_index=True, sort=False)
 
     if len(studies) > 0:
         studies = studies[["StudyInstanceUID", "dataset", "number"]]
@@ -88,7 +91,7 @@ def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=Fa
     if len(g) > 0:
         # unpack arrays
         result = pd.DataFrame([(d, tup.id, tup.name) for tup in g.itertuples() for d in tup.labels])
-        result.columns = ["labels", "id", "name"]
+        result.columns = ["labels", "groupId", "groupName"]
 
         def unpack_dictionary(df, column):
             ret = None
@@ -99,32 +102,27 @@ def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=Fa
             return ret
 
         label_groups = unpack_dictionary(result, "labels")
-        label_groups.columns = [
-            "groupId",
-            "groupName",
-            "annotationMode",
-            "color",
-            "createdAt",
-            "description",
-            "labelId",
-            "labelName",
-            "radlexTagIdsLabel",
-            "scope",
-            "type",
-            "updatedAt",
-        ]
-        label_groups = label_groups[
-            [
+        label_groups = label_groups[[
                 "groupId",
                 "groupName",
                 "annotationMode",
                 "color",
                 "description",
-                "labelId",
-                "labelName",
-                "radlexTagIdsLabel",
+                "id",
+                "name",
+                "radlexTagIds",
                 "scope",
-            ]
+            ]]
+        label_groups.columns = [
+            "groupId",
+            "groupName",
+            "annotationMode",
+            "color",
+            "description",
+            "labelId",
+            "labelName",
+            "radlexTagIdsLabel",
+            "scope"
         ]
 
         a = a.merge(label_groups, on="labelId", sort=False)
