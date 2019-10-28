@@ -56,7 +56,7 @@ def train_test_split(dataset, shuffle=True, validation_split=0.1):
     return train_dataset, valid_dataset
 
 
-def json_to_dataframe(json_file, dataset="all_datasets"):
+def json_to_dataframe(json_file, datasets=[]):
     with open(json_file, "r") as f:
         data = json.load(f)
 
@@ -65,25 +65,15 @@ def json_to_dataframe(json_file, dataset="all_datasets"):
     labels = None
 
     # Gets annotations for all datasets
-    if dataset == "all_datasets":
-        for d in data["datasets"]:
+    for d in data["datasets"]:
+        if d["name"] in datasets or len(datasets) == 0:
             study = pd.DataFrame(d["studies"])
             study["dataset"] = d["name"]
             studies = studies.append(study, ignore_index=True, sort=False)
 
             annots = pd.DataFrame(d["annotations"])
             annots["dataset"] = d["name"]
-            a = a.append(annots, ignore_index=True, sort=False)   
-    else:
-        for d in data["datasets"]:
-            if d["name"] == dataset:
-                study = pd.DataFrame(d["studies"])
-                study["dataset"] = d["name"]
-                studies = studies.append(study, ignore_index=True, sort=False)
-
-                annots = pd.DataFrame(d["annotations"])
-                annots["dataset"] = d["name"]
-                a = a.append(annots, ignore_index=True, sort=False)
+            a = a.append(annots, ignore_index=True, sort=False)
 
     if len(studies) > 0:
         studies = studies[["StudyInstanceUID", "dataset", "number"]]
