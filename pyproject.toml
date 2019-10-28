@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mdai-client-py"
-version = "0.4.0"
+version = "0.4.1"
 description = "MD.ai DICOM proxy for deployment within firewalled network"
 authors = ["Leon Chen <leon@md.ai>"]
 
