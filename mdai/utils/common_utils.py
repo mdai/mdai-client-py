@@ -56,13 +56,13 @@ def train_test_split(dataset, shuffle=True, validation_split=0.1):
     return train_dataset, valid_dataset
 
 
-def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=False):
+def json_to_dataframe(json_file, dataset="all_datasets"):
     with open(json_file, "r") as f:
         data = json.load(f)
 
     a = pd.DataFrame([])
     studies = pd.DataFrame([])
-    label_groups = None
+    labels = None
 
     # Gets annotations for all datasets
     if dataset == "all_datasets":
@@ -101,8 +101,8 @@ def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=Fa
             del ret[column]
             return ret
 
-        label_groups = unpack_dictionary(result, "labels")
-        label_groups = label_groups[[
+        labels = unpack_dictionary(result, "labels")
+        labels = labels[[
                 "groupId",
                 "groupName",
                 "annotationMode",
@@ -113,7 +113,7 @@ def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=Fa
                 "radlexTagIds",
                 "scope",
             ]]
-        label_groups.columns = [
+        labels.columns = [
             "groupId",
             "groupName",
             "annotationMode",
@@ -125,9 +125,6 @@ def json_to_dataframe(json_file, dataset="all_datasets", should_return_labels=Fa
             "scope"
         ]
 
-        a = a.merge(label_groups, on="labelId", sort=False)
+        a = a.merge(labels, on="labelId", sort=False)
     a = a.merge(studies[["StudyInstanceUID", "number"]], on="StudyInstanceUID", sort=False)
-    if should_return_labels:
-        return a, studies, label_groups
-    else:
-        return a, studies
+    return {'annotations': a, 'studies': studies, 'labels': labels}
