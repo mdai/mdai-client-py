@@ -78,11 +78,10 @@ def json_to_dataframe(json_file, datasets=[]):
     if len(studies) > 0:
         studies = studies[["StudyInstanceUID", "dataset", "number"]]
     g = pd.DataFrame(data["labelGroups"])
-    
     # unpack arrays
     result = pd.DataFrame([(d, tup.id, tup.name) for tup in g.itertuples() for d in tup.labels])
     if len(result) > 0:
-            result.columns = ["labels", "groupId", "groupName"]
+        result.columns = ["labels", "groupId", "groupName"]
 
         def unpack_dictionary(df, column):
             ret = None
