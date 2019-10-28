@@ -115,7 +115,8 @@ def json_to_dataframe(json_file, datasets=[]):
             "scope"
         ]
 
-        a = a.merge(labels, on="labelId", sort=False)
-    if len(studies) > 0:
+        if len(a) > 0:
+            a = a.merge(labels, on="labelId", sort=False)
+    if len(studies) > 0 and len(a) > 0:
         a = a.merge(studies[["StudyInstanceUID", "number"]], on="StudyInstanceUID", sort=False)
     return {'annotations': a, 'studies': studies, 'labels': labels}
