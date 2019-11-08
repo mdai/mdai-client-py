@@ -1,0 +1,24 @@
+{
+  // Show the path in the top window bar.
+  "window.title": "${rootName}${separator}${activeEditorMedium}",
+
+  // Formatting
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveTimeout": 3000,
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "python.formatting.provider": "black",
+
+  // Linting
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.pylintEnabled": false,
+
+  // Use Python virtualenv
+  "python.pythonPath": ".venv/bin/python",
+
+  // Python-specific settings
+  "[python]": {
+    "editor.tabSize": 4
+  }
+}

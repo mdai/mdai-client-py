@@ -19,20 +19,6 @@ poetry install
 
 VSCode will automatically load the virtualenv. [flake8](http://flake8.pycqa.org) (linting) and [black](https://github.com/ambv/black) (formatter) are installed as dev dependencies.
 
-Recommended VS Code workspace settings (`.vscode/settings.json`):
-
-```json
-{
-  "python.pythonPath": ".venv/bin/python3.7",
-  "python.linting.pylintEnabled": false,
-  "python.linting.flake8Enabled": true,
-  "python.linting.flake8Args": ["--max-line-length=100"],
-  "python.formatting.provider": "black",
-  "python.formatting.blackArgs": ["--line-length=100"],
-  "editor.formatOnSave": true
-}
-```
-
 To activate the local virtualenv:
 
 ```sh
