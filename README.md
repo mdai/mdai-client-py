@@ -28,7 +28,7 @@ The MD.ai annotator is a powerful web based application, to store and view anony
 - MD.ai Documentation and Videos URL: https://docs.md.ai/
 - MD.ai Annotator Example Project URL: https://public.md.ai/annotator/project/aGq4k6NW/workspace
 
-![MD.ai Annotator](https://docs.md.ai/img/annotator_homepage.png)
+![MD.ai Annotator](https://docs.md.ai/img/annotator-homepage.png)
 
 ## MD.ai Annotation JSON Format
 
