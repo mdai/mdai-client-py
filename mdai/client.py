@@ -9,6 +9,7 @@ from retrying import retry
 from tqdm import tqdm
 import arrow
 from .preprocess import Project
+from . import __version__
 
 
 def retry_on_http_error(exception):
@@ -160,6 +161,8 @@ class Client:
         headers = self._create_headers()
         headers["Accept"] = "application/json"
         headers["Content-Type"] = "application/json"
+        headers["apollographql-client-name"] = ("mdai-client-py",)
+        headers["apollographql-client-version"] = __version__
 
         data = {"query": query, "variables": variables}
         r = self.session.post(gql_endpoint, headers=headers, json=data)
