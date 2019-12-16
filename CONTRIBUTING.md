@@ -9,9 +9,12 @@
 Uses [Poetry](https://poetry.eustace.io/docs/). For initial setup, run:
 
 ```sh
+# Install poetry
+pip install poetry==1.0.0
+
 # Configure poetry to install virtualenv in local directory
-poetry config settings.virtualenvs.create true
-poetry config settings.virtualenvs.in-project true
+poetry config virtualenvs.create true
+poetry config virtualenvs.in-project true
 
 # Install virtualenv in local directory
 poetry install
