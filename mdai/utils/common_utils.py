@@ -92,7 +92,33 @@ def json_to_dataframe(json_file, datasets=[]):
             return ret
 
         labels = unpack_dictionary(result, "labels")
-        labels = labels[[
+        if "parentId" in labels.columns:
+            labels = labels[[
+                    "groupId",
+                    "groupName",
+                    "annotationMode",
+                    "color",
+                    "description",
+                    "id",
+                    "name",
+                    "radlexTagIds",
+                    "scope",
+                    "parentId"
+                ]]
+            labels.columns = [
+                "groupId",
+                "groupName",
+                "annotationMode",
+                "color",
+                "description",
+                "labelId",
+                "labelName",
+                "radlexTagIdsLabel",
+                "scope",
+                "parentId"
+            ]
+        else:
+            labels = labels[[
                 "groupId",
                 "groupName",
                 "annotationMode",
@@ -101,22 +127,25 @@ def json_to_dataframe(json_file, datasets=[]):
                 "id",
                 "name",
                 "radlexTagIds",
-                "scope",
+                "scope"
             ]]
-        labels.columns = [
-            "groupId",
-            "groupName",
-            "annotationMode",
-            "color",
-            "description",
-            "labelId",
-            "labelName",
-            "radlexTagIdsLabel",
-            "scope"
-        ]
+            labels.columns = [
+                "groupId",
+                "groupName",
+                "annotationMode",
+                "color",
+                "description",
+                "labelId",
+                "labelName",
+                "radlexTagIdsLabel",
+                "scope"
+            ]
 
         if len(a) > 0:
-            a = a.merge(labels, on="labelId", sort=False)
+            if "parentId" in labels.columns:
+                a = a.merge(labels, on=["labelId","parentId"], sort=False)
+            else:
+                a = a.merge(labels, on=["labelId"], sort=False)
     if len(studies) > 0 and len(a) > 0:
         a = a.merge(studies[["StudyInstanceUID", "number"]], on="StudyInstanceUID", sort=False)
     return {'annotations': a, 'studies': studies, 'labels': labels}
