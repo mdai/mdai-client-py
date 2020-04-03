@@ -14,26 +14,26 @@ step_restore_cache: &step_restore_cache
     keys:
       - v1-{{ checksum "poetry.lock" }}
     paths:
-      - '.venv'
-      - '/usr/local/bin'
-      - '/usr/local/lib/python3.7/site-packages'
+      - ".venv"
+      - "/usr/local/bin"
+      - "/usr/local/lib/python3.7/site-packages"
 
 step_install_dependencies: &step_install_dependencies
   run:
     name: Install dependencies
     command: |
-      sudo pip install poetry
-      poetry config settings.virtualenvs.create true
-      poetry config settings.virtualenvs.in-project true
+      sudo pip install -U poetry==1.0.0
+      poetry config virtualenvs.create true
+      poetry config virtualenvs.in-project true
       poetry install
 
 step_save_cache: &step_save_cache
   save_cache:
     key: v1-{{ checksum "poetry.lock" }}
     paths:
-      - '.venv'
-      - '/usr/local/bin'
-      - '/usr/local/lib/python3.7/site-packages'
+      - ".venv"
+      - "/usr/local/bin"
+      - "/usr/local/lib/python3.7/site-packages"
 
 run_tests: &run_tests
   run:
