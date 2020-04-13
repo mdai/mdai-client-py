@@ -11,6 +11,7 @@ authors = ["MD.ai"]
 python = ">=3.7"
 arrow = "*"
 matplotlib = "*"
+nibabel = "*"
 numpy = "*"
 opencv-python ="*"
 pandas = "*"
@@ -30,5 +31,5 @@ sphinx = "^2.2"
 recommonmark = "^0.6.0"
 
 [build-system]
-requires = ["poetry==1.0.0"]
+requires = ["poetry>=1.0.0"]
 build-backend = "poetry.masonry.api"
