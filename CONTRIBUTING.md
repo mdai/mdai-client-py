@@ -2,15 +2,15 @@
 
 ## Python version
 
-[Pyenv](https://github.com/pyenv/pyenv) is recommended for managing python versions. Currently, python 3.7 is used for development.
+[Pyenv](https://github.com/pyenv/pyenv) is recommended for managing python versions. Currently, python 3.7+ is used for development.
 
 ## Virtualenv
 
 Uses [Poetry](https://poetry.eustace.io/docs/). For initial setup, run:
 
 ```sh
-# Install poetry
-pip install poetry==1.0.0
+# Install poetry (1.0+)
+pip install -U poetry
 
 # Configure poetry to install virtualenv in local directory
 poetry config virtualenvs.create true
@@ -26,4 +26,6 @@ To activate the local virtualenv:
 
 ```sh
 source .venv/bin/activate
+# or
+poetry shell
 ```
