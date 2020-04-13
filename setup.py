@@ -19,6 +19,7 @@ setup(
     install_requires=[
         "arrow",
         "matplotlib",
+        "nibabel",
         "numpy",
         "opencv-python",
         "pandas",

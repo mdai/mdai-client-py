@@ -11,6 +11,7 @@ authors = ["MD.ai"]
 python = ">=3.7"
 arrow = "*"
 matplotlib = "*"
+nibabel = "*"
 numpy = "*"
 opencv-python ="*"
 pandas = "*"
