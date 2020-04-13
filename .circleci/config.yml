@@ -3,26 +3,18 @@ common_deploy_setup: &common_deploy_setup
   docker:
     - image: circleci/python:3.7.3
 
-chown_dirs: &chown_dirs
-  run:
-    command: |
-      sudo chown -R circleci:circleci /usr/local/bin
-      sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-
 step_restore_cache: &step_restore_cache
   restore_cache:
     keys:
       - v1-{{ checksum "poetry.lock" }}
     paths:
       - ".venv"
-      - "/usr/local/bin"
-      - "/usr/local/lib/python3.7/site-packages"
 
 step_install_dependencies: &step_install_dependencies
   run:
     name: Install dependencies
     command: |
-      sudo pip install -U poetry==1.0.0
+      sudo pip install -U poetry
       poetry config virtualenvs.create true
       poetry config virtualenvs.in-project true
       poetry install
@@ -32,8 +24,6 @@ step_save_cache: &step_save_cache
     key: v1-{{ checksum "poetry.lock" }}
     paths:
       - ".venv"
-      - "/usr/local/bin"
-      - "/usr/local/lib/python3.7/site-packages"
 
 run_tests: &run_tests
   run:
@@ -48,7 +38,6 @@ jobs:
     resource_class: small
     steps:
       - checkout
-      - <<: *chown_dirs
       - <<: *step_restore_cache
       - <<: *step_install_dependencies
       - <<: *step_save_cache
@@ -59,7 +48,6 @@ jobs:
     resource_class: small
     steps:
       - checkout
-      - <<: *chown_dirs
       - <<: *step_restore_cache
       - <<: *step_install_dependencies
       - <<: *step_save_cache

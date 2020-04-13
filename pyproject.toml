@@ -29,5 +29,5 @@ sphinx = "^2.2"
 recommonmark = "^0.6.0"
 
 [build-system]
-requires = ["poetry==1.0.0"]
+requires = ["poetry>=1.0.0"]
 build-backend = "poetry.masonry.api"
