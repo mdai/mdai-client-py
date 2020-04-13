@@ -169,7 +169,7 @@ def convert_ct(
     output_dir=None,
     input_ext=".nii.gz",
     plane="axial",
-    sample_dicom_fp=os.path.join(os.path.dirname(__file__), "./sample_dicom.dcm"),
+    sample_dicom_fp=os.path.join(os.path.dirname(""), "./sample_dicom.dcm"),
     window_center=40,
     window_width=350,
 ):
@@ -213,26 +213,29 @@ def _get_files(root, ext=None):
         if item.is_file():
             if not ext:
                 yield item.path
-            elif os.path.splitext(item.path)[1] == ext:
+            elif os.path.splitext(item.path)[1] == ext or item.path.endswith(ext):
                 yield item.path
         elif item.is_dir():
             yield from _get_files(item.path)
 
 def _get_datatype(headers):
-    dt = str(img.headers.get_data_dtype())
-    if dt == 'int8':
-        return np.int8
-    elif dt == 'int16':
-        return np.int16
-    elif dt == 'int32':
-        return np.int32
-    elif dt == 'int64':
-        return np.int64
-    elif dt == 'float32':
-        return np.float32
-    elif dt == 'int64':
-        return np.float64
+    dt = str(headers.get_data_dtype())
     return np.int16
+# header datatype not reliable
+
+#     if dt == 'int8':
+#         return np.int8
+#     elif dt == 'int16':
+#         return np.int16
+#     elif dt == 'int32':
+#         return np.int32
+#     elif dt == 'int64':
+#         return np.int64
+#     elif dt == 'float32':
+#         return np.float32
+#     elif dt == 'float64':
+#         return np.float64
+#     return np.int16
 
 
 
@@ -242,7 +245,7 @@ def _convert_nii_file_ct(
     output_dir=None,
     input_ext=".nii.gz",
     plane="axial",
-    sample_dicom_fp=os.path.join(os.path.dirname(__file__), "./sample_dicom.dcm"),
+    sample_dicom_fp=os.path.join(os.path.dirname(""), "./sample_dicom.dcm"),
     window_center=40,
     window_width=350,
 ):
