@@ -28,8 +28,7 @@ setup(
         "requests",
         "retrying",
         "scikit-image",
-        "tqdm",
-        "nibabel"
+        "tqdm"
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
