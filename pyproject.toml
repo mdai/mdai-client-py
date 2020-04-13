@@ -21,7 +21,6 @@ requests = "*"
 retrying = "*"
 scikit-image = "*"
 tqdm = "*"
-nibabel = "^3.0.2"
 
 [tool.poetry.dev-dependencies]
 black = "==19.10b0"
