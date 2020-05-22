@@ -1,3 +1,8 @@
+version: 2.1
+
+orbs:
+  slack: circleci/slack@3.4.2
+
 common_deploy_setup: &common_deploy_setup
   working_directory: ~/mdai-client-py
   docker:
@@ -7,8 +12,6 @@ step_restore_cache: &step_restore_cache
   restore_cache:
     keys:
       - v1-{{ checksum "poetry.lock" }}
-    paths:
-      - ".venv"
 
 step_install_dependencies: &step_install_dependencies
   run:
@@ -31,7 +34,6 @@ run_tests: &run_tests
     command: |
       poetry run pytest
 
-version: 2
 jobs:
   test:
     <<: *common_deploy_setup
@@ -42,6 +44,7 @@ jobs:
       - <<: *step_install_dependencies
       - <<: *step_save_cache
       - <<: *run_tests
+      - slack/status
 
   test_and_release:
     <<: *common_deploy_setup
@@ -59,9 +62,9 @@ jobs:
             poetry run pip install twine wheel
             poetry run python setup.py sdist bdist_wheel
             poetry run twine upload dist/*
+      - slack/status
 
 workflows:
-  version: 2
   deploy:
     jobs:
       - test:
