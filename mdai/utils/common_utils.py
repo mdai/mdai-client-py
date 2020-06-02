@@ -75,7 +75,7 @@ def json_to_dataframe(json_file, datasets=[]):
 
     # Gets annotations for all datasets
     for d in data["datasets"]:
-        if d["name"] in datasets or len(datasets) == 0:
+        if d["id"] in datasets or len(datasets) == 0:
             study = pd.DataFrame(d["studies"])
             study["dataset"] = d["name"]
             study["dataset_id"] = d["id"]
@@ -153,9 +153,8 @@ def json_to_dataframe(json_file, datasets=[]):
 
         if len(a) > 0:
             if "parentId" in labels.columns:
-                a = a.merge(labels, on=["labelId","parentId"], sort=False)
-            else:
-                a = a.merge(labels, on=["labelId"], sort=False)
+                a.drop('parentId',axis=1,inplace=True)
+            a = a.merge(labels, on=["labelId"], sort=False)
     if len(studies) > 0 and len(a) > 0:
         a = a.merge(studies[["StudyInstanceUID", "number", "dataset_id"]], on="StudyInstanceUID", sort=False)
     return {'annotations': a, 'studies': studies, 'labels': labels}
