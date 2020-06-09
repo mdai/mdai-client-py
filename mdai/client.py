@@ -115,6 +115,7 @@ class Client:
         if num_chunks > 1:
             print(f"Importing {len(annotations)} total annotations in {num_chunks} chunks...")
 
+        errors = []
         for i in range(num_chunks):
             start = i * chunk_size
             end = (i + 1) * chunk_size
@@ -130,7 +131,18 @@ class Client:
                 headers=self._create_headers(),
             )
             manager.create_job()
-            manager.wait_until_ready()
+            chunk_errors = manager.wait_until_ready()
+
+            for error in chunk_errors:
+                for key in error:
+                    errors.append({ chunk_size*i + int(key) : error[key] })
+
+        if num_chunks > 1:
+            print(f"\nSuccessfully imported { len(annotations) - len(errors) } / {len(annotations)} annotations into project {project_id}.")
+
+        return errors
+
+
 
     def _create_headers(self):
         headers = {}
@@ -441,7 +453,7 @@ class AnnotationsImportManager:
         self.headers = headers
 
         self.job_id = None
-
+        self.failed_annotations = []
         # ready threading event
         self._ready = threading.Event()
 
@@ -469,13 +481,14 @@ class AnnotationsImportManager:
             self._check_job_progress()
         else:
             print(r.status_code)
-            if r.status_code == 401:
+            if r.status_code == 401 or r.status_code == 400:
                 msg = "Provided IDs are invalid, or you do not have sufficient permissions."
                 print(msg)
             self._on_job_error()
 
     def wait_until_ready(self):
         self._ready.wait()
+        return self.failed_annotations
 
     @retry(
         retry_on_exception=retry_on_http_error,
@@ -549,7 +562,16 @@ class AnnotationsImportManager:
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
             r.raise_for_status()
-        print(f"Successfully imported annotations into project {self.project_id}.")
+
+        try:
+            body = r.json()
+            self.failed_annotations = body["failedAnnotations"]
+        except (TypeError, KeyError):
+            self._on_job_error()
+            return
+
+        successful_annotations_count = len(self.annotations) - len(self.failed_annotations)
+        print(f"Successfully imported { successful_annotations_count } / {len(self.annotations)} annotations into project {self.project_id}.")
         # fire ready threading.Event
         self._ready.set()
 
