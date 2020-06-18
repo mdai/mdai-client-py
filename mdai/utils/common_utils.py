@@ -125,7 +125,7 @@ def json_to_dataframe(json_file, datasets=[]):
                 "labelName",
                 "radlexTagIdsLabel",
                 "scope",
-                "parentId"
+                "parentLabelId"
             ]
         else:
             labels = labels[[
@@ -152,8 +152,6 @@ def json_to_dataframe(json_file, datasets=[]):
             ]
 
         if len(a) > 0:
-            if "parentId" in labels.columns:
-                a.drop('parentId',axis=1,inplace=True)
             a = a.merge(labels, on=["labelId"], sort=False)
     if len(studies) > 0 and len(a) > 0:
         a = a.merge(studies[["StudyInstanceUID", "number", "dataset_id"]], on="StudyInstanceUID", sort=False)
