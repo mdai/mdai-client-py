@@ -30,8 +30,9 @@ class Client:
     """
 
     def __init__(self, domain="public.md.ai", access_token=None):
-        domain_pattern = r"^\w+\.md\.ai(:\d+)?$"
-        if not re.match(domain_pattern, domain):
+        domain_match = re.match(r"^\w+\.md\.ai$", domain)
+        dev_domain_match = re.match(r"^\w+\.mdai.dev(:\d+)?$", domain)
+        if not domain_match and not dev_domain_match:
             raise ValueError(f"domain {domain} is invalid: should be format *.md.ai")
 
         self.domain = domain
@@ -115,8 +116,12 @@ class Client:
         if num_chunks > 1:
             print(f"Importing {len(annotations)} total annotations in {num_chunks} chunks...")
 
-        errors = []
+        failed_annotations = []
+
         for i in range(num_chunks):
+            if num_chunks > 1:
+                print(f"Chunk {i+1}...")
+
             start = i * chunk_size
             end = (i + 1) * chunk_size
             annotations_chunk = annotations[start:end]
@@ -131,18 +136,21 @@ class Client:
                 headers=self._create_headers(),
             )
             manager.create_job()
-            chunk_errors = manager.wait_until_ready()
+            manager.wait_until_ready()
 
-            for error in chunk_errors:
-                for key in error:
-                    errors.append({ chunk_size*i + int(key) : error[key] })
+            for failed_annotation in manager.failed_annotations:
+                # add start index since returned index is for chunk
+                failed_annotation["index"] += start
+                failed_annotations.append(failed_annotation)
 
         if num_chunks > 1:
-            print(f"\nSuccessfully imported { len(annotations) - len(errors) } / {len(annotations)} annotations into project {project_id}.")
+            num_failed = len(failed_annotations)
+            print(
+                f"Successfully imported {len(annotations) - num_failed} / {len(annotations)}"
+                + f" total annotations into project {project_id}."
+            )
 
-        return errors
-
-
+        return failed_annotations
 
     def _create_headers(self):
         headers = {}
@@ -453,7 +461,10 @@ class AnnotationsImportManager:
         self.headers = headers
 
         self.job_id = None
+
+        # list of failed annotation imports
         self.failed_annotations = []
+
         # ready threading event
         self._ready = threading.Event()
 
@@ -468,7 +479,12 @@ class AnnotationsImportManager:
             "modelHashId": self.model_id,
             "annotations": self.annotations,
         }
+
+        # reset list of failed annotation imports
+        self.failed_annotations = []
+
         r = self.session.post(endpoint, json=params, headers=self.headers)
+
         if r.status_code == 202:
             self.job_id = r.json()["jobId"]
             msg = f"Importing {len(self.annotations)} annotations into project {self.project_id}"
@@ -481,14 +497,13 @@ class AnnotationsImportManager:
             self._check_job_progress()
         else:
             print(r.status_code)
-            if r.status_code == 401 or r.status_code == 400:
+            if r.status_code in (400, 401):
                 msg = "Provided IDs are invalid, or you do not have sufficient permissions."
                 print(msg)
             self._on_job_error()
 
     def wait_until_ready(self):
         self._ready.wait()
-        return self.failed_annotations
 
     @retry(
         retry_on_exception=retry_on_http_error,
@@ -565,13 +580,17 @@ class AnnotationsImportManager:
 
         try:
             body = r.json()
-            self.failed_annotations = body["failedAnnotations"]
+            self.failed_annotations = body["failed"]
         except (TypeError, KeyError):
             self._on_job_error()
             return
 
-        successful_annotations_count = len(self.annotations) - len(self.failed_annotations)
-        print(f"Successfully imported { successful_annotations_count } / {len(self.annotations)} annotations into project {self.project_id}.")
+        num_failed = len(self.failed_annotations)
+        print(
+            f"Successfully imported {len(self.annotations) - num_failed} / {len(self.annotations)}"
+            + f" annotations into project {self.project_id}"
+            + f", dataset {self.dataset_id}."
+        )
         # fire ready threading.Event
         self._ready.set()
 
@@ -587,6 +606,9 @@ class AnnotationsImportManager:
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
             r.raise_for_status()
-        print(f"Error importing annotations into project {self.project_id}.")
+        print(
+            f"Error importing annotations into project {self.project_id}"
+            + f", dataset {self.dataset_id}."
+        )
         # fire ready threading.Event
         self._ready.set()
