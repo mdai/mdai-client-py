@@ -78,7 +78,7 @@ def json_to_dataframe(json_file, datasets=[]):
         if d["id"] in datasets or len(datasets) == 0:
             study = pd.DataFrame(d["studies"])
             study["dataset"] = d["name"]
-            study["dataset_id"] = d["id"]
+            study["datasetId"] = d["id"]
             studies = studies.append(study, ignore_index=True, sort=False)
 
             annots = pd.DataFrame(d["annotations"])
@@ -86,7 +86,7 @@ def json_to_dataframe(json_file, datasets=[]):
             a = a.append(annots, ignore_index=True, sort=False)
 
     if len(studies) > 0:
-        studies = studies[["StudyInstanceUID", "dataset", "dataset_id", "number"]]
+        studies = studies[["StudyInstanceUID", "dataset", "datasetId", "number"]]
     g = pd.DataFrame(data["labelGroups"])
     # unpack arrays
     result = pd.DataFrame([(d, tup.id, tup.name) for tup in g.itertuples() for d in tup.labels])
@@ -154,7 +154,7 @@ def json_to_dataframe(json_file, datasets=[]):
         if len(a) > 0:
             a = a.merge(labels, on=["labelId"], sort=False)
     if len(studies) > 0 and len(a) > 0:
-        a = a.merge(studies[["StudyInstanceUID", "number", "dataset_id"]], on="StudyInstanceUID", sort=False)
+        a = a.merge(studies[["StudyInstanceUID", "number", "datasetId"]], on="StudyInstanceUID", sort=False)
     return {'annotations': a, 'studies': studies, 'labels': labels}
 
    
