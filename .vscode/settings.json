@@ -4,7 +4,6 @@
 
   // Formatting
   "editor.formatOnSave": true,
-  "editor.formatOnSaveTimeout": 3000,
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
   "python.formatting.provider": "black",
