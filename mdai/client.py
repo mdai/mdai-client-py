@@ -86,12 +86,7 @@ class Client:
         print("Deprecated method: use `import_annotations` instead.")
 
     def import_annotations(
-        self,
-        annotations,
-        project_id,
-        dataset_id,
-        model_id=None,
-        chunk_size=ANNOTATIONS_IMPORT_DEFAULT_CHUNK_SIZE,
+        self, annotations, project_id, dataset_id, chunk_size=ANNOTATIONS_IMPORT_DEFAULT_CHUNK_SIZE,
     ):
         """Import annotations into project.
         For example, this method can be used to load machine learning model results into project as
@@ -99,8 +94,7 @@ class Client:
 
         Arguments:
             project_id: hash ID of project.
-            dataset_id: hash ID of machine learning model.
-            model_id: hash ID of machine learning model.
+            dataset_id: hash ID of dataset.
             annotations: list of annotations to load.
             chunk_size: number of annotations to load as a chunk.
         """
@@ -130,7 +124,6 @@ class Client:
                 annotations=annotations_chunk,
                 project_id=project_id,
                 dataset_id=dataset_id,
-                model_id=model_id,
                 session=self.session,
                 domain=self.domain,
                 headers=self._create_headers(),
@@ -439,7 +432,6 @@ class AnnotationsImportManager:
         annotations=None,
         project_id=None,
         dataset_id=None,
-        model_id=None,
         session=None,
         domain=None,
         headers=None,
@@ -452,7 +444,6 @@ class AnnotationsImportManager:
         self.annotations = annotations
         self.project_id = project_id
         self.dataset_id = dataset_id
-        self.model_id = model_id
         if session and isinstance(session, requests.Session):
             self.session = session
         else:
@@ -476,7 +467,6 @@ class AnnotationsImportManager:
         params = {
             "projectHashId": self.project_id,
             "datasetHashId": self.dataset_id,
-            "modelHashId": self.model_id,
             "annotations": self.annotations,
         }
 
@@ -487,12 +477,9 @@ class AnnotationsImportManager:
 
         if r.status_code == 202:
             self.job_id = r.json()["jobId"]
-            msg = f"Importing {len(self.annotations)} annotations into project {self.project_id}"
-            msg += f", dataset {self.dataset_id}"
-            if self.model_id:
-                msg += f", model {self.model_id}..."
-            else:
-                msg += "..."
+            msg = f"Importing {len(self.annotations)} annotations into "
+            msg += f"project {self.project_id}, "
+            msg += f"dataset {self.dataset_id}..."
             print(msg.ljust(100))
             self._check_job_progress()
         else:
