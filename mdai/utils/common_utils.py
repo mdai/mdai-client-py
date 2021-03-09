@@ -12,6 +12,7 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 
+import cv2
 
 def hex2rgb(h):
     """Convert Hex color encoding to RGB color"""
@@ -155,7 +156,38 @@ def json_to_dataframe(json_file, datasets=[]):
             a = a.merge(labels, on=["labelId"], sort=False)
     if len(studies) > 0 and len(a) > 0:
         a = a.merge(studies, on=["StudyInstanceUID", "dataset"], sort=False)
+    # Format data
+    studies.number = studies.number.astype(int)
+    a.number = a.number.astype(int)
+    a.loc.createdAt = pd.to_datetime(a.createdAt)
+    a.loc.updatedAt = pd.to_datetime(a.updatedAt)
     return {'annotations': a, 'studies': studies, 'labels': labels}
+
+def convert_mask_data(data):
+    """
+    Converts a numpy array mask to our internal complex polygon data representation.
+    """
+    mask = np.uint8(np.array(data) > 0)
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours = [contours[i].reshape(-1, 2) for i in range(len(contours))]
+
+    # Separate contours based on foreground / background polygons
+    output_data = {
+        "foreground": [],
+        "background": [],
+    }
+
+    counts = [0] * len(contours)
+    for i in range(len(contours)):
+        parent = hierarchy[0][i][-1]
+        if parent != -1:
+            counts[i] = counts[parent] + 1
+
+        if counts[i] % 2:
+            output_data["background"].append(contours[i].tolist())
+        else:
+            output_data["foreground"].append(contours[i].tolist())
+    return output_data
 
    
 """Converts NIFTI format to DICOM for CT exams. MR to come...
