@@ -2,6 +2,7 @@ import os
 import threading
 import re
 import math
+import uuid
 import zipfile
 import requests
 import urllib3.exceptions
@@ -384,40 +385,54 @@ class ProjectDataManager:
             return os.path.join(self.path, annotations_fp)
 
     def _download_files(self, file_keys):
-        """Downloads files via signed URL requested from MD.ai API.
+        """Downloads exported files.
         """
-        for file_key in file_keys:
-            print(f"Downloading file: {file_key}")
-            filepath = os.path.join(self.path, file_key)
+        try:
+            for file_key in file_keys:
+                print(f"Downloading file: {file_key}")
+                filepath = os.path.join(self.path, file_key)
 
-            key = requests.utils.quote(file_key)
-            url = f"https://{self.domain}/api/project-files/signedurl/get?key={key}"
+                key = requests.utils.quote(file_key)
+                dl_session_id = str(uuid.uuid4())
 
-            # stream response so we can display progress bar
-            r = requests.get(url, stream=True, headers=self.headers)
+                # request download token
+                url = f"https://{self.domain}/api/data-export/download-request"
+                data = {"key": key, "sessionId": dl_session_id}
+                r = requests.post(url, json=data, headers=self.headers)
+                dl_token = r.json().get("token")
 
-            # total size in bytes
-            total_size = int(r.headers.get("content-length", 0))
-            block_size = 32 * 1024
-            wrote = 0
-            with open(filepath, "wb") as f:
-                with tqdm(total=total_size, unit="B", unit_scale=True, unit_divisor=1024) as pbar:
-                    for chunk in r.iter_content(block_size):
-                        f.write(chunk)
-                        wrote = wrote + len(chunk)
-                        pbar.update(block_size)
-            if total_size != 0 and wrote != total_size:
-                raise IOError(f"Error downloading file {file_key}.")
+                # download file
+                # stream response so we can display progress bar
+                params = {"token": dl_token, "sessionId": dl_session_id}
+                url = f"https://{self.domain}/api/data-export/download/{key}"
+                r = requests.get(url, params=params, headers=self.headers, stream=True)
 
-            if self.data_type == "images":
-                # unzip archive
-                print(f"Extracting archive: {file_key}")
-                with zipfile.ZipFile(filepath, "r") as f:
-                    f.extractall(self.path)
+                # total size in bytes
+                total_size = int(r.headers.get("content-length", 0))
+                block_size = 32 * 1024
+                wrote = 0
+                with open(filepath, "wb") as f:
+                    with tqdm(
+                        total=total_size, unit="B", unit_scale=True, unit_divisor=1024
+                    ) as pbar:
+                        for chunk in r.iter_content(block_size):
+                            f.write(chunk)
+                            wrote = wrote + len(chunk)
+                            pbar.update(block_size)
+                if total_size != 0 and wrote != total_size:
+                    raise IOError(f"Error downloading file {file_key}.")
 
-        self.data_path = self._get_data_path(file_keys)
+                if self.data_type == "images":
+                    # unzip archive
+                    print(f"Extracting archive: {file_key}")
+                    with zipfile.ZipFile(filepath, "r") as f:
+                        f.extractall(self.path)
 
-        print(f"Success: {self.data_type} data for project {self.project_id} ready.")
+            self.data_path = self._get_data_path(file_keys)
+
+            print(f"Success: {self.data_type} data for project {self.project_id} ready.")
+        except Exception:
+            print(f"Error downloading {self.data_type} data for project {self.project_id}.")
 
         # fire ready threading.Event
         self._ready.set()
