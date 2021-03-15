@@ -153,6 +153,16 @@ def load_mask(image_id, dataset):
                 cv2.circle(mask_instance, (x, y), 7, (255, 255, 255), -1)
                 mask[:, :, i] = mask_instance
 
+            elif annotation_mode == "mask":
+                mask_instance = mask[:, :, i].copy()
+                if a.data["foreground"]:
+                    for i in a.data["foreground"]:
+                        mask_instance = cv2.fillPoly(mask_instance, [np.array(i, dtype=np.int32)], (255, 255, 255))
+                if a.data["background"]:
+                    for i in a.data["background"]:
+                        mask_instance = cv2.fillPoly(mask_instance, [np.array(i, dtype=np.int32)], (0,0,0))
+                mask[:, :, i] = mask_instance
+
             elif annotation_mode is None:
                 print("Not a local instance")
 

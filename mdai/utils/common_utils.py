@@ -11,8 +11,8 @@ import pydicom
 import numpy as np
 import nibabel as nib
 from tqdm import tqdm
-
 import cv2
+
 
 def hex2rgb(h):
     """Convert Hex color encoding to RGB color"""
@@ -162,6 +162,19 @@ def json_to_dataframe(json_file, datasets=[]):
     a.loc.createdAt = pd.to_datetime(a.createdAt)
     a.loc.updatedAt = pd.to_datetime(a.updatedAt)
     return {'annotations': a, 'studies': studies, 'labels': labels}
+
+def convert_mask_annotation_to_array(row):
+    """
+    Converts a dataframe row containing a mask annotation from our internal complex polygon data representation to a numpy array.
+    """
+    mask = np.zeros((int(row.width),int(row.height)))
+    if row.data["foreground"]:
+        for i in row.data["foreground"]:
+            mask = cv2.fillPoly(mask, [np.array(i, dtype=np.int32)], 1)
+    if row.data["background"]:
+        for i in row.data["background"]:
+            mask = cv2.fillPoly(mask, [np.array(i, dtype=np.int32)], 0)
+    return mask
 
 def convert_mask_data(data):
     """
