@@ -28,7 +28,8 @@ setup(
         "requests",
         "retrying",
         "scikit-image",
-        "tqdm"
+        "tqdm",
+        "dicom2nifti",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
