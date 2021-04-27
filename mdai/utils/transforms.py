@@ -2,21 +2,24 @@ import os
 import cv2
 import numpy as np
 import dicom2nifti
+import pydicom
 
 DEFAULT_WINDOW_WIDTH = 350
 DEFAULT_WINDOW_CENTER = 50
 DEFAULT_IMAGE_SIZE = (512.0, 512.0)
 
 
-def _sort_dicoms(dicoms):
+def sort_dicoms(dicoms):
     """
-    Sort the dicoms based on the image position patient
+    Sort the dicoms based on the image position patient.
+    Find most significant axis to use during sorting. The original way of sorting
+    (first x than y than z) does not work in certain border situations where for
+    exampe the X will only slightly change causing the values to remain equal on
+    multiple slices messing up the sorting completely.
+
     @dicoms: list of dicoms
     """
-    # find most significant axis to use during sorting
-    # the original way of sorting (first x than y than z) does not work in certain border situations
-    # where for exampe the X will only slightly change causing the values to remain equal on multiple slices
-    # messing up the sorting completely)
+
     dicom_input_sorted_x = sorted(dicoms, key=lambda x: (x.ImagePositionPatient[0]))
     dicom_input_sorted_y = sorted(dicoms, key=lambda x: (x.ImagePositionPatient[1]))
     dicom_input_sorted_z = sorted(dicoms, key=lambda x: (x.ImagePositionPatient[2]))
@@ -40,7 +43,7 @@ def _sort_dicoms(dicoms):
         return dicom_input_sorted_z
 
 
-def _apply_slope_intercept(dicom_file):
+def apply_slope_intercept(dicom_file):
     """
     Applies rescale slope and rescale intercept transformation.
     """
@@ -57,7 +60,7 @@ def _apply_slope_intercept(dicom_file):
     return array
 
 
-def _remove_padding(array):
+def remove_padding(array):
     """
     Removes background/padding from an 8bit numpy array.
     """
@@ -70,18 +73,26 @@ def _remove_padding(array):
     return arr[x1:x2, y1:y2]
 
 
-def _get_window_from_dicom(dicom_file):
+def get_window_from_dicom(dicom_file):
     """
     Returns window width and window center values.
     Defaults: width - 350, level - 50.
     """
     if "WindowWidth" in dicom_file:
-        width = float(dicom_file.WindowWidth)
+        width = dicom_file.WindowWidth
+        if isinstance(width, pydicom.multival.MultiValue):
+            width = int(width[0])
+        else:
+            width = int(width)
     else:
         width = DEFAULT_WINDOW_WIDTH
 
     if "WindowCenter" in dicom_file:
-        level = float(dicom_file.WindowCenter)
+        level = dicom_file.WindowCenter
+        if isinstance(level, pydicom.multival.MultiValue):
+            level = int(level[0])
+        else:
+            level = int(level)
     else:
         level = DEFAULT_WINDOW_CENTER
     return width, level
@@ -111,7 +122,7 @@ def load_dicom_array(dicom_file, apply_slope_intercept=True):
     """
     array = dicom_file.pixel_array.copy()
     if apply_slope_intercept:
-        array = _apply_slope_intercept(dicom_file)
+        array = apply_slope_intercept(dicom_file)
     return array
 
 
@@ -125,7 +136,7 @@ def convert_dicom_to_nifti(dicom_files, tempdir):
     nifti_file = dicom2nifti.convert_dicom.dicom_array_to_nifti(
         dicom_files, output_file=output_file, reorient_nifti=True,
     )
-    return _sort_dicoms(dicom_files)
+    return sort_dicoms(dicom_files)
 
 
 def convert_dicom_to_8bit(dicom_file, imsize=None, width=None, level=None, remove_padding=False):
@@ -134,14 +145,17 @@ def convert_dicom_to_8bit(dicom_file, imsize=None, width=None, level=None, remov
     return the image as a Numpy array scaled to [0,255] of the specified size.
     """
     if width is None or level is None:
-        width, level = _get_window_from_dicom(dicom_file)
+        width, level = get_window_from_dicom(dicom_file)
 
-    array = _apply_slope_intercept(dicom_file)
+    array = apply_slope_intercept(dicom_file)
     array = window(array, width, level)
     array = rescale_to_8bit(array)
 
+    if dicom_file.PhotometricInterpretation == "MONOCHROME1":
+        array = 255 - array
+
     if remove_padding:
-        array = _remove_padding(array)
+        array = remove_padding(array)
 
     if imsize is not None:
         array = cv2.resize(array, imsize)
@@ -182,7 +196,7 @@ def stack_slices(dicom_files):
     Stacks the +-1 slice to each slice in a dicom series.
     Returns the list of stacked images and sorted list of dicom files.
     """
-    dicom_files = _sort_dicoms(dicom_files)
+    dicom_files = sort_dicoms(dicom_files)
     dicom_images = [load_dicom_array(i) for i in dicom_files]
 
     stacked_images = []
