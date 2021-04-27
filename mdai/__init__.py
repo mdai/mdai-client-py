@@ -1,10 +1,11 @@
 """MD.ai Python client library."""
 
-__version__ = "0.7.2"
+__version__ = "0.7.3"
 
 from . import preprocess
 from .client import Client
 from .utils import common_utils
+from .utils import transforms
 
 try:
     CAN_VISUALIZE = True
