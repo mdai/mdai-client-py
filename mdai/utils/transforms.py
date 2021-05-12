@@ -151,7 +151,10 @@ def convert_dicom_to_8bit(dicom_file, imsize=None, width=None, level=None, remov
     array = window(array, width, level)
     array = rescale_to_8bit(array)
 
-    if dicom_file.PhotometricInterpretation == "MONOCHROME1":
+    if (
+        "PhotometricInterpretation" in dicom_file
+        and dicom_file.PhotometricInterpretation == "MONOCHROME1"
+    ):
         array = 255 - array
 
     if remove_padding:
