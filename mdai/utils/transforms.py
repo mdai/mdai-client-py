@@ -53,10 +53,10 @@ def apply_slope_intercept(dicom_file):
     scale_intercept = 0
     if "RescaleIntercept" in dicom_file:
         scale_intercept = int(dicom_file.RescaleIntercept)
-    if "RescaleIntercept" in dicom_file:
+    if "RescaleSlope" in dicom_file:
         scale_slope = int(dicom_file.RescaleSlope)
-    array *= scale_slope
-    array += scale_intercept
+    array = array * scale_slope
+    array = array + scale_intercept
     return array
 
 
