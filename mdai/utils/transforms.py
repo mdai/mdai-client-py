@@ -139,7 +139,7 @@ def convert_dicom_to_nifti(dicom_files, tempdir):
     return sort_dicoms(dicom_files)
 
 
-def convert_dicom_to_8bit(dicom_file, imsize=None, width=None, level=None, remove_padding=False):
+def convert_dicom_to_8bit(dicom_file, imsize=None, width=None, level=None, keep_padding=True):
     """
     Given a DICOM file, window specifications, and image size,
     return the image as a Numpy array scaled to [0,255] of the specified size.
@@ -157,7 +157,7 @@ def convert_dicom_to_8bit(dicom_file, imsize=None, width=None, level=None, remov
     ):
         array = 255 - array
 
-    if remove_padding:
+    if not keep_padding:
         array = remove_padding(array)
 
     if imsize is not None:
