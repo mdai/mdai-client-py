@@ -1,6 +1,6 @@
 """MD.ai Python client library."""
 
-__version__ = "0.7.4"
+__version__ = "0.7.5"
 
 from . import preprocess
 from .client import Client
