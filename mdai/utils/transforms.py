@@ -4,8 +4,6 @@ import numpy as np
 import dicom2nifti
 import pydicom
 
-DEFAULT_WINDOW_WIDTH = 350
-DEFAULT_WINDOW_CENTER = 50
 DEFAULT_IMAGE_SIZE = (512.0, 512.0)
 
 
@@ -76,16 +74,15 @@ def remove_padding(array):
 def get_window_from_dicom(dicom_file):
     """
     Returns window width and window center values.
-    Defaults: width - 350, level - 50.
+    If no window width/level is provided or available, returns None.
     """
+    width, level = None, None
     if "WindowWidth" in dicom_file:
         width = dicom_file.WindowWidth
         if isinstance(width, pydicom.multival.MultiValue):
             width = int(width[0])
         else:
             width = int(width)
-    else:
-        width = DEFAULT_WINDOW_WIDTH
 
     if "WindowCenter" in dicom_file:
         level = dicom_file.WindowCenter
@@ -93,16 +90,16 @@ def get_window_from_dicom(dicom_file):
             level = int(level[0])
         else:
             level = int(level)
-    else:
-        level = DEFAULT_WINDOW_CENTER
     return width, level
 
 
 def window(array, width, level):
     """
     Applies windowing operation.
+    If window width/level is None, returns the array itself.
     """
-    array = np.clip(array, level - width // 2, level + width // 2)
+    if width is not None and level is not None:
+        array = np.clip(array, level - width // 2, level + width // 2)
     return array
 
 
