@@ -67,7 +67,7 @@ def train_test_split(dataset, shuffle=True, validation_split=0.1):
 
 
 def json_to_dataframe(json_file, datasets=[]):
-    with open(json_file, "r") as f:
+    with open(json_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     a = pd.DataFrame([])
@@ -104,7 +104,8 @@ def json_to_dataframe(json_file, datasets=[]):
 
         labels = unpack_dictionary(result, "labels")
         if "parentId" in labels.columns:
-            labels = labels[[
+            labels = labels[
+                [
                     "groupId",
                     "groupName",
                     "annotationMode",
@@ -114,8 +115,9 @@ def json_to_dataframe(json_file, datasets=[]):
                     "name",
                     "radlexTagIds",
                     "scope",
-                    "parentId"
-                ]]
+                    "parentId",
+                ]
+            ]
             labels.columns = [
                 "groupId",
                 "groupName",
@@ -126,20 +128,22 @@ def json_to_dataframe(json_file, datasets=[]):
                 "labelName",
                 "radlexTagIdsLabel",
                 "scope",
-                "parentLabelId"
+                "parentLabelId",
             ]
         else:
-            labels = labels[[
-                "groupId",
-                "groupName",
-                "annotationMode",
-                "color",
-                "description",
-                "id",
-                "name",
-                "radlexTagIds",
-                "scope"
-            ]]
+            labels = labels[
+                [
+                    "groupId",
+                    "groupName",
+                    "annotationMode",
+                    "color",
+                    "description",
+                    "id",
+                    "name",
+                    "radlexTagIds",
+                    "scope",
+                ]
+            ]
             labels.columns = [
                 "groupId",
                 "groupName",
@@ -149,7 +153,7 @@ def json_to_dataframe(json_file, datasets=[]):
                 "labelId",
                 "labelName",
                 "radlexTagIdsLabel",
-                "scope"
+                "scope",
             ]
 
         if len(a) > 0:
@@ -161,13 +165,14 @@ def json_to_dataframe(json_file, datasets=[]):
     a.number = a.number.astype(int)
     a.loc.createdAt = pd.to_datetime(a.createdAt)
     a.loc.updatedAt = pd.to_datetime(a.updatedAt)
-    return {'annotations': a, 'studies': studies, 'labels': labels}
+    return {"annotations": a, "studies": studies, "labels": labels}
+
 
 def convert_mask_annotation_to_array(row):
     """
     Converts a dataframe row containing a mask annotation from our internal complex polygon data representation to a numpy array.
     """
-    mask = np.zeros((int(row.width),int(row.height)))
+    mask = np.zeros((int(row.width), int(row.height)))
     if row.data["foreground"]:
         for i in row.data["foreground"]:
             mask = cv2.fillPoly(mask, [np.array(i, dtype=np.int32)], 1)
@@ -175,6 +180,7 @@ def convert_mask_annotation_to_array(row):
         for i in row.data["background"]:
             mask = cv2.fillPoly(mask, [np.array(i, dtype=np.int32)], 0)
     return mask
+
 
 def convert_mask_data(data):
     """
@@ -202,10 +208,11 @@ def convert_mask_data(data):
             output_data["foreground"].append(contours[i].tolist())
     return output_data
 
-   
+
 """Converts NIFTI format to DICOM for CT exams. MR to come...
 
 """
+
 
 def convert_ct(
     input_dir=None,
@@ -261,9 +268,12 @@ def _get_files(root, ext=None):
         elif item.is_dir():
             yield from _get_files(item.path)
 
+
 def _get_datatype(headers):
     dt = str(headers.get_data_dtype())
     return np.int16
+
+
 # header datatype not reliable
 
 #     if dt == 'int8':
@@ -279,7 +289,6 @@ def _get_datatype(headers):
 #     elif dt == 'float64':
 #         return np.float64
 #     return np.int16
-
 
 
 def _convert_nii_file_ct(
@@ -352,7 +361,7 @@ def _convert_nii_file_ct(
         axes = [slice(None)] * 3
         axes[slice_axis] = slice_index
         arr = voxel_arr[tuple(axes)].astype(_get_datatype(headers))
-        ds[0x7fe00010].value = arr.tobytes()
+        ds[0x7FE00010].value = arr.tobytes()
 
         # modify tags
         # - UIDs are created by pydicom.uid.generate_uid at each level above
@@ -363,9 +372,9 @@ def _convert_nii_file_ct(
         ds[0x00080018].value = instance_uid  # SOPInstanceUID
         ds[0x00100010].value = patient_name
         ds[0x00100020].value = patient_id
-        ds[0x0020000d].value = study_uid  # StudyInstanceUID
-        ds[0x0020000e].value = series_uid  # SeriesInstanceUID
-        ds[0x0008103e].value = ""  # Series Description
+        ds[0x0020000D].value = study_uid  # StudyInstanceUID
+        ds[0x0020000E].value = series_uid  # SeriesInstanceUID
+        ds[0x0008103E].value = ""  # Series Description
         ds[0x00200011].value = "1"  # Series Number
         ds[0x00200012].value = str(slice_index + 1)  # Acquisition Number
         ds[0x00200013].value = str(slice_index + 1)  # Instance Number
