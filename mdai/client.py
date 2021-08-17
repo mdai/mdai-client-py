@@ -41,12 +41,17 @@ class Client:
         self.session = requests.Session()
         self._test_endpoint()
 
-    def project(self, project_id, path=".", force_download=False, annotations_only=False):
+    def project(
+        self, project_id, dataset_id=None, path=".", force_download=False, annotations_only=False
+    ):
         """Initializes Project class given project id.
 
         Arguments:
-            project_id: hash ID of project.
-            path: directory used for data.
+            project_id: hash ID of project
+            dataset_id: hash ID of dataset (optional - default `None`)
+            path: directory used for data (optional - default `"."`)
+            force_download: if `True`, ignores possible existing data in `path` (optional - default `False`)
+            annotations_only: if `True`, downloads annotations only (optional - default `False`)
         """
         if path == ".":
             print("Using working directory for data.")
@@ -57,6 +62,7 @@ class Client:
         data_manager_kwargs = {
             "domain": self.domain,
             "project_id": project_id,
+            "dataset_id": dataset_id,
             "path": path,
             "session": self.session,
             "headers": self._create_headers(),
@@ -100,11 +106,11 @@ class Client:
             chunk_size: number of annotations to load as a chunk.
         """
         if not annotations:
-            print(f"No annotations provided.")
+            print("No annotations provided.")
         if not project_id:
-            print(f"project_id is required.")
+            print("project_id is required.")
         if not dataset_id:
-            print(f"dataset_id is required.")
+            print("dataset_id is required.")
 
         num_chunks = math.ceil(len(annotations) / chunk_size)
 
@@ -199,6 +205,7 @@ class ProjectDataManager:
         data_type,
         domain=None,
         project_id=None,
+        dataset_id=None,
         path=".",
         session=None,
         headers=None,
@@ -218,6 +225,7 @@ class ProjectDataManager:
 
         self.domain = domain
         self.project_id = project_id
+        self.dataset_id = dataset_id
         self.path = path
         if session and isinstance(session, requests.Session):
             self.session = session
@@ -255,11 +263,16 @@ class ProjectDataManager:
 
     def _get_data_export_params(self):
         if self.data_type == "images":
-            params = {"projectHashId": self.project_id, "exportFormat": "zip"}
+            params = {
+                "projectHashId": self.project_id,
+                "datasetHashId": self.dataset_id,
+                "exportFormat": "zip",
+            }
         elif self.data_type == "annotations":
             # TODO: restrict to assigned labelgroup
             params = {
                 "projectHashId": self.project_id,
+                "datasetHashId": self.dataset_id,
                 "labelGroupNum": None,
                 "exportFormat": "json",
             }
