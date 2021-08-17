@@ -300,7 +300,13 @@ class ProjectDataManager:
             self._on_data_export_job_error()
             return
 
-        if status == "running":
+        if status == "done":
+            self._on_data_export_job_done()
+
+        elif status == "error":
+            self._on_data_export_job_error()
+
+        elif status == "running":
             try:
                 progress = int(body["progress"])
             except (TypeError, ValueError):
@@ -311,32 +317,24 @@ class ProjectDataManager:
                 time_remaining = 0
 
             # print formatted progress info
-            if progress > 0 and progress <= 100 and time_remaining > 0:
-                if time_remaining > 45:
-                    time_remaining_fmt = (
-                        arrow.now().shift(seconds=time_remaining).humanize(only_distance=True)
-                    )
-                else:
-                    # arrow humanizes <= 45 to 'in seconds' or 'just now',
-                    # so we will opt to be explicit instead.
-                    time_remaining_fmt = f"in {time_remaining} seconds"
-                end_char = "\r" if progress < 100 else "\n"
-                msg = (
-                    f"Exporting {self.data_type} for project {self.project_id}..."
-                    + f"{progress}% (time remaining: {time_remaining_fmt})."
+            if time_remaining > 45:
+                time_remaining_fmt = (
+                    arrow.now().shift(seconds=time_remaining).humanize(only_distance=True)
                 )
-                print(msg.ljust(100), end=end_char, flush=True)
+            else:
+                # arrow humanizes <= 45 to 'in seconds' or 'just now',
+                # so we will opt to be explicit instead.
+                time_remaining_fmt = f"{time_remaining} seconds"
+            end_char = "\r" if progress < 100 else "\n"
+            msg = (
+                f"Exporting {self.data_type} for project {self.project_id}..."
+                + f"{progress}% (time remaining: {time_remaining_fmt})."
+            )
+            print(msg.ljust(100), end=end_char, flush=True)
 
-            # run progress check at 1s intervals so long as status == 'running' and progress < 100
-            if progress < 100:
-                t = threading.Timer(1.0, self._check_data_export_job_progress)
-                t.start()
-
-            return
-        elif status == "done":
-            self._on_data_export_job_done()
-        elif status == "error":
-            self._on_data_export_job_error()
+            # run progress check at 1s intervals so long as status == 'running'
+            t = threading.Timer(1.0, self._check_data_export_job_progress)
+            t.start()
 
     @retry(
         retry_on_exception=retry_on_http_error,
@@ -542,7 +540,13 @@ class AnnotationsImportManager:
             self._on_job_error()
             return
 
-        if status == "running":
+        if status == "done":
+            self._on_job_done()
+
+        elif status == "error":
+            self._on_job_error()
+
+        elif status == "running":
             try:
                 progress = int(body["progress"])
             except (TypeError, ValueError):
@@ -553,32 +557,24 @@ class AnnotationsImportManager:
                 time_remaining = 0
 
             # print formatted progress info
-            if progress > 0 and progress <= 100 and time_remaining > 0:
-                if time_remaining > 45:
-                    time_remaining_fmt = (
-                        arrow.now().shift(seconds=time_remaining).humanize(only_distance=True)
-                    )
-                else:
-                    # arrow humanizes <= 45 to 'in seconds' or 'just now',
-                    # so we will opt to be explicit instead.
-                    time_remaining_fmt = f"in {time_remaining} seconds"
-                end_char = "\r" if progress < 100 else "\n"
-                msg = (
-                    f"Annotations import for project {self.project_id}..."
-                    + f"{progress}% (time remaining: {time_remaining_fmt})."
+            if time_remaining > 45:
+                time_remaining_fmt = (
+                    arrow.now().shift(seconds=time_remaining).humanize(only_distance=True)
                 )
-                print(msg.ljust(100), end=end_char, flush=True)
+            else:
+                # arrow humanizes <= 45 to 'in seconds' or 'just now',
+                # so we will opt to be explicit instead.
+                time_remaining_fmt = f"{time_remaining} seconds"
+            end_char = "\r" if progress < 100 else "\n"
+            msg = (
+                f"Annotations import for project {self.project_id}..."
+                + f"{progress}% (time remaining: {time_remaining_fmt})."
+            )
+            print(msg.ljust(100), end=end_char, flush=True)
 
-            # run progress check at 1s intervals so long as status == 'running' and progress < 100
-            if progress < 100:
-                t = threading.Timer(1.0, self._check_job_progress)
-                t.start()
-
-            return
-        elif status == "done":
-            self._on_job_done()
-        elif status == "error":
-            self._on_job_error()
+            # run progress check at 1s intervals so long as status == 'running'
+            t = threading.Timer(1.0, self._check_job_progress)
+            t.start()
 
     @retry(
         retry_on_exception=retry_on_http_error,
