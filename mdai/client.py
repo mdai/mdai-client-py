@@ -42,7 +42,13 @@ class Client:
         self._test_endpoint()
 
     def project(
-        self, project_id, dataset_id=None, path=".", force_download=False, annotations_only=False
+        self,
+        project_id,
+        dataset_id=None,
+        path=".",
+        force_download=False,
+        annotations_only=False,
+        label_group_num=None,
     ):
         """Initializes Project class given project id.
 
@@ -52,6 +58,7 @@ class Client:
             path: directory used for data (optional - default `"."`)
             force_download: if `True`, ignores possible existing data in `path` (optional - default `False`)
             annotations_only: if `True`, downloads annotations only (optional - default `False`)
+            label_group_num: number for the label group to download (optional - default `None`)
         """
         if path == ".":
             print("Using working directory for data.")
@@ -67,6 +74,7 @@ class Client:
             "session": self.session,
             "headers": self._create_headers(),
             "force_download": force_download,
+            "label_group_num": label_group_num,
         }
 
         annotations_data_manager = ProjectDataManager("annotations", **data_manager_kwargs)
@@ -206,6 +214,7 @@ class ProjectDataManager:
         domain=None,
         project_id=None,
         dataset_id=None,
+        label_group_num=None,
         path=".",
         session=None,
         headers=None,
@@ -226,6 +235,7 @@ class ProjectDataManager:
         self.domain = domain
         self.project_id = project_id
         self.dataset_id = dataset_id
+        self.label_group_num = label_group_num
         self.path = path
         if session and isinstance(session, requests.Session):
             self.session = session
@@ -273,7 +283,7 @@ class ProjectDataManager:
             params = {
                 "projectHashId": self.project_id,
                 "datasetHashId": self.dataset_id,
-                "labelGroupNum": None,
+                "labelGroupNum": self.label_group_num,
                 "exportFormat": "json",
             }
         return params
