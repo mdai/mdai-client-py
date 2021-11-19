@@ -42,7 +42,13 @@ class Client:
         self._test_endpoint()
 
     def project(
-        self, project_id, dataset_id=None, path=".", force_download=False, annotations_only=False
+        self,
+        project_id,
+        dataset_id=None,
+        path=".",
+        force_download=False,
+        annotations_only=False,
+        label_group_num=None,
     ):
         """Initializes Project class given project id.
 
@@ -52,6 +58,7 @@ class Client:
             path: directory used for data (optional - default `"."`)
             force_download: if `True`, ignores possible existing data in `path` (optional - default `False`)
             annotations_only: if `True`, downloads annotations only (optional - default `False`)
+            label_group_num: number for the label group to download (optional - default `None`)
         """
         if path == ".":
             print("Using working directory for data.")
@@ -67,6 +74,7 @@ class Client:
             "session": self.session,
             "headers": self._create_headers(),
             "force_download": force_download,
+            "label_group_num": label_group_num,
         }
 
         annotations_data_manager = ProjectDataManager("annotations", **data_manager_kwargs)
@@ -86,6 +94,40 @@ class Client:
         else:
             print("No project created. Downloaded annotations only.")
             return None
+
+    def download_model_outputs(
+        self, project_id, dataset_id=None, model_id=None, path=".", force_download=False
+    ):
+        """Downloads model outputs given project_id.
+
+        Arguments:
+            project_id: hash ID of project
+            dataset_id: hash ID of dataset (optional - default `None`)
+            model_id: hash ID of the model (optional - default `None`)
+            path: directory used for data (optional - default `"."`)
+            force_download: if `True`, ignores possible existing data in `path` (optional - default `False`)
+        """
+        if path == ".":
+            print("Using working directory for model outputs.")
+        else:
+            os.makedirs(path, exist_ok=True)
+            print(f"Using path '{path}' for data.")
+
+        data_manager_kwargs = {
+            "domain": self.domain,
+            "project_id": project_id,
+            "dataset_id": dataset_id,
+            "model_id": model_id,
+            "path": path,
+            "session": self.session,
+            "headers": self._create_headers(),
+            "force_download": force_download,
+        }
+
+        model_outputs_manager = ProjectDataManager("model-outputs", **data_manager_kwargs)
+        model_outputs_manager.create_data_export_job()
+        model_outputs_manager.wait_until_ready()
+        return None
 
     def load_model_annotations(self):
         """Deprecated method: use `import_annotations` instead.
@@ -206,13 +248,15 @@ class ProjectDataManager:
         domain=None,
         project_id=None,
         dataset_id=None,
+        label_group_num=None,
+        model_id=None,
         path=".",
         session=None,
         headers=None,
         force_download=False,
     ):
-        if data_type not in ["images", "annotations"]:
-            raise ValueError("data_type must be 'images' or 'annotations'.")
+        if data_type not in ["images", "annotations", "model-outputs"]:
+            raise ValueError("data_type must be 'images' or 'annotations' or 'model-outputs'.")
         if not domain:
             raise ValueError("domain is not specified.")
         if not project_id:
@@ -226,6 +270,8 @@ class ProjectDataManager:
         self.domain = domain
         self.project_id = project_id
         self.dataset_id = dataset_id
+        self.label_group_num = label_group_num
+        self.model_id = model_id
         self.path = path
         if session and isinstance(session, requests.Session):
             self.session = session
@@ -273,7 +319,14 @@ class ProjectDataManager:
             params = {
                 "projectHashId": self.project_id,
                 "datasetHashId": self.dataset_id,
-                "labelGroupNum": None,
+                "labelGroupNum": self.label_group_num,
+                "exportFormat": "json",
+            }
+        elif self.data_type == "model-outputs":
+            params = {
+                "projectHashId": self.project_id,
+                "datasetHashId": self.dataset_id,
+                "modelHashId": self.model_id,
                 "exportFormat": "json",
             }
         return params
@@ -394,6 +447,10 @@ class ProjectDataManager:
             # annotations export will be single file
             annotations_fp = file_keys[0]
             return os.path.join(self.path, annotations_fp)
+        elif self.data_type == "model-outputs":
+            # model outputs export will be single file
+            model_outputs_fp = file_keys[0]
+            return os.path.join(self.path, model_outputs_fp)
 
     def _download_files(self, file_keys):
         """Downloads exported files.
