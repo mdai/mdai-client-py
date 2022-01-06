@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath("../mdai"))
 # -- Project information -----------------------------------------------------
 
 project = "mdai-client-py"
-copyright = "2020 MD.ai"
+copyright = "2022 MD.ai"
 author = "MD.ai"
 
 # The short X.Y version
