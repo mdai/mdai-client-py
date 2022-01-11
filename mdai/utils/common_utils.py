@@ -44,9 +44,11 @@ def train_test_split(dataset, shuffle=True, validation_split=0.1):
 
     train_dataset = copy.deepcopy(dataset)
     train_dataset.id = dataset.id + "-TRAIN"
+    train_dataset.name = dataset.name + "-TRAIN"
 
     valid_dataset = copy.deepcopy(dataset)
     valid_dataset.id = dataset.id + "-VALID"
+    valid_dataset.name = dataset.name + "-VALID"
 
     imgs_anns_dict = dataset.imgs_anns_dict
 
@@ -58,6 +60,16 @@ def train_test_split(dataset, shuffle=True, validation_split=0.1):
 
     train_dataset.imgs_anns_dict = train_imgs_anns_dict
     valid_dataset.imgs_anns_dict = valid_imgs_anns_dict
+
+    all_train_annotations = []
+    for _, annotations in train_dataset.imgs_anns_dict.items():
+        all_train_annotations += annotations
+    train_dataset.all_annotations = all_train_annotations
+
+    all_val_annotations = []
+    for _, annotations in valid_dataset.imgs_anns_dict.items():
+        all_val_annotations += annotations
+    valid_dataset.all_annotations = all_val_annotations
 
     print(
         "Num of instances for training set: %d, validation set: %d"
