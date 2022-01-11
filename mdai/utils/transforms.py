@@ -7,40 +7,6 @@ import pydicom
 DEFAULT_IMAGE_SIZE = (512.0, 512.0)
 
 
-def sort_dicoms(dicoms):
-    """
-    Sort the dicoms based on the image position patient.
-    Find most significant axis to use during sorting. The original way of sorting
-    (first x than y than z) does not work in certain border situations where for
-    exampe the X will only slightly change causing the values to remain equal on
-    multiple slices messing up the sorting completely.
-
-    @dicoms: list of dicoms
-    """
-
-    dicom_input_sorted_x = sorted(dicoms, key=lambda x: (x.ImagePositionPatient[0]))
-    dicom_input_sorted_y = sorted(dicoms, key=lambda x: (x.ImagePositionPatient[1]))
-    dicom_input_sorted_z = sorted(dicoms, key=lambda x: (x.ImagePositionPatient[2]))
-    diff_x = abs(
-        dicom_input_sorted_x[-1].ImagePositionPatient[0]
-        - dicom_input_sorted_x[0].ImagePositionPatient[0]
-    )
-    diff_y = abs(
-        dicom_input_sorted_y[-1].ImagePositionPatient[1]
-        - dicom_input_sorted_y[0].ImagePositionPatient[1]
-    )
-    diff_z = abs(
-        dicom_input_sorted_z[-1].ImagePositionPatient[2]
-        - dicom_input_sorted_z[0].ImagePositionPatient[2]
-    )
-    if diff_x >= diff_y and diff_x >= diff_z:
-        return dicom_input_sorted_x
-    if diff_y >= diff_x and diff_y >= diff_z:
-        return dicom_input_sorted_y
-    if diff_z >= diff_x and diff_z >= diff_y:
-        return dicom_input_sorted_z
-
-
 def apply_slope_intercept(dicom_file):
     """
     Applies rescale slope and rescale intercept transformation.
@@ -133,7 +99,7 @@ def convert_dicom_to_nifti(dicom_files, tempdir):
     nifti_file = dicom2nifti.convert_dicom.dicom_array_to_nifti(
         dicom_files, output_file=output_file, reorient_nifti=True,
     )
-    return sort_dicoms(dicom_files)
+    return dicom2nifti.common.sort_dicoms(dicom_files)
 
 
 def convert_dicom_to_8bit(dicom_file, imsize=None, width=None, level=None, keep_padding=True):
@@ -196,7 +162,7 @@ def stack_slices(dicom_files):
     Stacks the +-1 slice to each slice in a dicom series.
     Returns the list of stacked images and sorted list of dicom files.
     """
-    dicom_files = sort_dicoms(dicom_files)
+    dicom_files = dicom2nifti.common.sort_dicoms(dicom_files)
     dicom_images = [load_dicom_array(i) for i in dicom_files]
 
     stacked_images = []
