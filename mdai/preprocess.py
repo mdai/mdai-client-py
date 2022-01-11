@@ -225,6 +225,8 @@ class Dataset:
 
         # filter annotations by label ids
         ann_filtered = self.get_annotations(label_ids)
+        if not ann_filtered:
+            raise Exception(f"No annotations exist for dataset '{self.name}'.")
 
         self.imgs_anns_dict = self._associate_images_and_annotations(ann_filtered)
 
