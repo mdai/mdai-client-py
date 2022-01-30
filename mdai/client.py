@@ -45,20 +45,20 @@ class Client:
         self,
         project_id,
         dataset_id=None,
+        label_group_id=None,
         path=".",
         force_download=False,
         annotations_only=False,
-        label_group_num=None,
     ):
         """Initializes Project class given project id.
 
         Arguments:
             project_id: hash ID of project
-            dataset_id: hash ID of dataset (optional - default `None`)
+            dataset_id: hash ID of dataset to scope to (optional - default `None`)
+            label_group_id: hash ID of the label group to scope to (optional - default `None`)
             path: directory used for data (optional - default `"."`)
             force_download: if `True`, ignores possible existing data in `path` (optional - default `False`)
             annotations_only: if `True`, downloads annotations only (optional - default `False`)
-            label_group_num: number for the label group to download (optional - default `None`)
         """
         if path == ".":
             print("Using working directory for data.")
@@ -70,11 +70,11 @@ class Client:
             "domain": self.domain,
             "project_id": project_id,
             "dataset_id": dataset_id,
+            "label_group_id": label_group_id,
             "path": path,
             "session": self.session,
             "headers": self._create_headers(),
             "force_download": force_download,
-            "label_group_num": label_group_num,
         }
 
         annotations_data_manager = ProjectDataManager("annotations", **data_manager_kwargs)
@@ -248,7 +248,7 @@ class ProjectDataManager:
         domain=None,
         project_id=None,
         dataset_id=None,
-        label_group_num=None,
+        label_group_id=None,
         model_id=None,
         path=".",
         session=None,
@@ -270,7 +270,7 @@ class ProjectDataManager:
         self.domain = domain
         self.project_id = project_id
         self.dataset_id = dataset_id
-        self.label_group_num = label_group_num
+        self.label_group_id = label_group_id
         self.model_id = model_id
         self.path = path
         if session and isinstance(session, requests.Session):
@@ -319,7 +319,7 @@ class ProjectDataManager:
             params = {
                 "projectHashId": self.project_id,
                 "datasetHashId": self.dataset_id,
-                "labelGroupNum": self.label_group_num,
+                "labelGroupHashId": self.label_group_id,
                 "exportFormat": "json",
             }
         elif self.data_type == "model-outputs":
