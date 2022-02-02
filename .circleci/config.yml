@@ -35,18 +35,7 @@ run_tests: &run_tests
       poetry run pytest
 
 jobs:
-  test:
-    <<: *common_deploy_setup
-    resource_class: small
-    steps:
-      - checkout
-      - <<: *step_restore_cache
-      - <<: *step_install_dependencies
-      - <<: *step_save_cache
-      - <<: *run_tests
-      - slack/status
-
-  test_and_release:
+  test_and_release_to_testpypi:
     <<: *common_deploy_setup
     resource_class: small
     steps:
@@ -56,22 +45,41 @@ jobs:
       - <<: *step_save_cache
       - <<: *run_tests
       - run:
-          name: Release
+          name: Release to TestPyPi
           command: |
             echo $PYPIRC_CONTENTS | base64 --decode > ~/.pypirc
             poetry run pip install twine wheel
             poetry run python setup.py sdist bdist_wheel
-            poetry run twine upload dist/*
+            poetry run twine upload --repository testpypi dist/*
+      - slack/status
+
+  test_and_release_to_pypi:
+    <<: *common_deploy_setup
+    resource_class: small
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - <<: *step_install_dependencies
+      - <<: *step_save_cache
+      - <<: *run_tests
+      - run:
+          name: Release to PyPi
+          command: |
+            echo $PYPIRC_CONTENTS | base64 --decode > ~/.pypirc
+            poetry run pip install twine wheel
+            poetry run python setup.py sdist bdist_wheel
+            poetry run twine upload --repository pypi dist/*
       - slack/status
 
 workflows:
   deploy:
     jobs:
-      - test:
+
+      - test_and_release_to_testpypi:
           filters:
             branches:
               only: master
-      - test_and_release:
+      - test_and_release_to_pypi:
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/
