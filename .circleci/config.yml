@@ -47,10 +47,9 @@ jobs:
       - run:
           name: Release to TestPyPi
           command: |
-            echo $PYPIRC_CONTENTS | base64 --decode > ~/.pypirc
-            poetry run pip install twine wheel
-            poetry run python setup.py sdist bdist_wheel
-            poetry run twine upload --repository testpypi dist/*
+            poetry config repositories.testpypi https://test.pypi.org/legacy/
+            poetry config http-basic.testpypi $TESTPYPI_USER $TESTPYPI_PASS
+            poetry publish --build --repository testpypi
       - slack/status
 
   test_and_release_to_pypi:
@@ -65,16 +64,13 @@ jobs:
       - run:
           name: Release to PyPi
           command: |
-            echo $PYPIRC_CONTENTS | base64 --decode > ~/.pypirc
-            poetry run pip install twine wheel
-            poetry run python setup.py sdist bdist_wheel
-            poetry run twine upload --repository pypi dist/*
+            poetry config http-basic.pypi $PYPI_USER $PYPI_PASS
+            poetry publish --build
       - slack/status
 
 workflows:
   deploy:
     jobs:
-
       - test_and_release_to_testpypi:
           filters:
             branches:

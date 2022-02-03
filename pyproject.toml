@@ -2,10 +2,30 @@
 line-length = 100
 
 [tool.poetry]
-name = "mdai-client-py"
-version = "0"
+name = "mdai"
+version = "0.11.0"
 description = "MD.ai Python client library"
-authors = ["MD.ai"]
+license = "Apache-2.0"
+authors = ["MD.ai <github@md.ai>"]
+readme = "README.md"
+homepage = "https://github.com/mdai/mdai-client-py"
+repository = "https://github.com/mdai/mdai-client-py"
+documentation = "https://docs.md.ai/libraries/python/"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.7"
@@ -31,5 +51,5 @@ sphinx = "^2.2"
 recommonmark = "^0.6.0"
 
 [build-system]
-requires = ["poetry>=1.0.0"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
