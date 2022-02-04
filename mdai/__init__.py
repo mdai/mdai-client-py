@@ -1,6 +1,10 @@
 """MD.ai Python client library."""
 
-__version__ = "0.10.0"
+try:
+    from importlib import metadata
+except ImportError:  # for Python<3.8
+    import importlib_metadata as metadata
+__version__ = metadata.version("mdai")
 
 from . import preprocess
 from .client import Client
