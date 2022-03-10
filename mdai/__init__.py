@@ -10,6 +10,7 @@ from . import preprocess
 from .client import Client
 from .utils import common_utils
 from .utils import transforms
+from .inference import delete_env, run_inference, infer
 
 try:
     CAN_VISUALIZE = True
