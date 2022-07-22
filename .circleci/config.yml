@@ -6,7 +6,7 @@ orbs:
 common_deploy_setup: &common_deploy_setup
   working_directory: ~/mdai-client-py
   docker:
-    - image: circleci/python:3.7.3
+    - image: cimg/python:3.7.13
 
 step_restore_cache: &step_restore_cache
   restore_cache:
