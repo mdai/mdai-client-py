@@ -129,6 +129,45 @@ class Client:
         model_outputs_manager.wait_until_ready()
         return None
 
+    def download_dicom_metadata(
+        self, project_id, dataset_id=None, format="json", path=".", force_download=False
+    ):
+        """Downloads dicom metadata given project_id, dataset_id and export format.
+
+        Arguments:
+            project_id: hash ID of project
+            dataset_id: hash ID of dataset (optional - default `None`)
+            format: export format for the metadata file, json or csv (optional - default `json`)
+            path: directory used for data (optional - default `"."`)
+            force_download: if `True`, ignores possible existing data in `path` (optional - default `False`)
+        """
+        if path == ".":
+            print("Using working directory for dicom metadata.")
+        else:
+            os.makedirs(path, exist_ok=True)
+            print(f"Using path '{path}' for data.")
+
+        if format not in ["json", "csv"]:
+            raise Exception(
+                "Incorrect export format specified for dicom-metadata. Only json and csv formats are supported."
+            )
+
+        data_manager_kwargs = {
+            "domain": self.domain,
+            "project_id": project_id,
+            "dataset_id": dataset_id,
+            "format": format,
+            "path": path,
+            "session": self.session,
+            "headers": self._create_headers(),
+            "force_download": force_download,
+        }
+
+        dicom_metadata_manager = ProjectDataManager("dicom-metadata", **data_manager_kwargs)
+        dicom_metadata_manager.create_data_export_job()
+        dicom_metadata_manager.wait_until_ready()
+        return None
+
     def load_model_annotations(self):
         """Deprecated method: use `import_annotations` instead.
         """
@@ -250,13 +289,16 @@ class ProjectDataManager:
         dataset_id=None,
         label_group_id=None,
         model_id=None,
+        format=None,
         path=".",
         session=None,
         headers=None,
         force_download=False,
     ):
-        if data_type not in ["images", "annotations", "model-outputs"]:
-            raise ValueError("data_type must be 'images' or 'annotations' or 'model-outputs'.")
+        if data_type not in ["images", "annotations", "model-outputs", "dicom-metadata"]:
+            raise ValueError(
+                "data_type must be 'images', 'annotations', 'model-outputs' or 'dicom-metadata'."
+            )
         if not domain:
             raise ValueError("domain is not specified.")
         if not project_id:
@@ -271,6 +313,7 @@ class ProjectDataManager:
         self.project_id = project_id
         self.dataset_id = dataset_id
         self.label_group_id = label_group_id
+        self.format = format
         self.model_id = model_id
         self.path = path
         if session and isinstance(session, requests.Session):
@@ -328,6 +371,12 @@ class ProjectDataManager:
                 "datasetHashId": self.dataset_id,
                 "modelHashId": self.model_id,
                 "exportFormat": "json",
+            }
+        elif self.data_type == "dicom-metadata":
+            params = {
+                "projectHashId": self.project_id,
+                "datasetHashId": self.dataset_id,
+                "exportFormat": self.format,
             }
         return params
 
@@ -451,6 +500,10 @@ class ProjectDataManager:
             # model outputs export will be single file
             model_outputs_fp = file_keys[0]
             return os.path.join(self.path, model_outputs_fp)
+        elif self.data_type == "dicom-metadata":
+            # dicom metadata export will be single file
+            dicom_metadata_fp = file_keys[0]
+            return os.path.join(self.path, dicom_metadata_fp)
 
     def _download_files(self, file_keys):
         """Downloads exported files.
