@@ -92,11 +92,11 @@ def json_to_dataframe(json_file, datasets=[]):
             study = pd.DataFrame(d["studies"])
             study["dataset"] = d["name"]
             study["datasetId"] = d["id"]
-            studies = studies.append(study, ignore_index=True, sort=False)
+            studies = pd.concat([studies, study], ignore_index=True, sort=False)
 
             annots = pd.DataFrame(d["annotations"])
             annots["dataset"] = d["name"]
-            a = a.append(annots, ignore_index=True, sort=False)
+            a = pd.concat([a, annots], ignore_index=True, sort=False)
 
     if len(studies) > 0:
         studies = studies[["StudyInstanceUID", "dataset", "datasetId", "number"]]
@@ -172,11 +172,11 @@ def json_to_dataframe(json_file, datasets=[]):
             a = a.merge(labels, on=["labelId"], sort=False)
     if len(studies) > 0 and len(a) > 0:
         a = a.merge(studies, on=["StudyInstanceUID", "dataset"], sort=False)
-    # Format data
-    studies.number = studies.number.astype(int)
-    a.number = a.number.astype(int)
-    a.loc.createdAt = pd.to_datetime(a.createdAt)
-    a.loc.updatedAt = pd.to_datetime(a.updatedAt)
+        # Format data
+        studies.number = studies.number.astype(int)
+        a.number = a.number.astype(int)
+        a.loc.createdAt = pd.to_datetime(a.createdAt)
+        a.loc.updatedAt = pd.to_datetime(a.updatedAt)
     return {"annotations": a, "studies": studies, "labels": labels}
 
 
