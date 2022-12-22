@@ -49,6 +49,7 @@ class Client:
         path=".",
         force_download=False,
         annotations_only=False,
+        extract_images=True,
     ):
         """Initializes Project class given project id.
 
@@ -59,6 +60,7 @@ class Client:
             path: directory used for data (optional - default `"."`)
             force_download: if `True`, ignores possible existing data in `path` (optional - default `False`)
             annotations_only: if `True`, downloads annotations only (optional - default `False`)
+            extract_images: if 'True', automatically extracts downloaded zip files for image exports (optional - default 'True')
         """
         if path == ".":
             print("Using working directory for data.")
@@ -75,6 +77,7 @@ class Client:
             "session": self.session,
             "headers": self._create_headers(),
             "force_download": force_download,
+            "extract_images": extract_images,
         }
 
         annotations_data_manager = ProjectDataManager("annotations", **data_manager_kwargs)
@@ -294,6 +297,7 @@ class ProjectDataManager:
         session=None,
         headers=None,
         force_download=False,
+        extract_images=True,
     ):
         if data_type not in ["images", "annotations", "model-outputs", "dicom-metadata"]:
             raise ValueError(
@@ -308,6 +312,7 @@ class ProjectDataManager:
 
         self.data_type = data_type
         self.force_download = force_download
+        self.extract_images = extract_images
 
         self.domain = domain
         self.project_id = project_id
@@ -543,7 +548,7 @@ class ProjectDataManager:
                 if total_size != 0 and wrote != total_size:
                     raise IOError(f"Error downloading file {file_key}.")
 
-                if self.data_type == "images":
+                if self.data_type == "images" and self.extract_images:
                     # unzip archive
                     print(f"Extracting archive: {file_key}")
                     with zipfile.ZipFile(filepath, "r") as f:
