@@ -104,7 +104,7 @@ def json_to_dataframe(json_file, datasets=[]):
     # unpack arrays
     result = pd.DataFrame([(d, tup.id, tup.name) for tup in g.itertuples() for d in tup.labels])
     if len(result) > 0:
-        result.columns = ["labels", "groupId", "groupName"]
+        result.columns = ["labels", "labelGroupId", "labelGroupName"]
 
         def unpack_dictionary(df, column):
             ret = None
@@ -118,8 +118,8 @@ def json_to_dataframe(json_file, datasets=[]):
         if "parentId" in labels.columns:
             labels = labels[
                 [
-                    "groupId",
-                    "groupName",
+                    "labelGroupId",
+                    "labelGroupName",
                     "annotationMode",
                     "color",
                     "description",
@@ -131,8 +131,8 @@ def json_to_dataframe(json_file, datasets=[]):
                 ]
             ]
             labels.columns = [
-                "groupId",
-                "groupName",
+                "labelGroupId",
+                "labelGroupName",
                 "annotationMode",
                 "color",
                 "description",
@@ -145,8 +145,8 @@ def json_to_dataframe(json_file, datasets=[]):
         else:
             labels = labels[
                 [
-                    "groupId",
-                    "groupName",
+                    "labelGroupId",
+                    "labelGroupName",
                     "annotationMode",
                     "color",
                     "description",
@@ -157,8 +157,8 @@ def json_to_dataframe(json_file, datasets=[]):
                 ]
             ]
             labels.columns = [
-                "groupId",
-                "groupName",
+                "labelGroupId",
+                "labelGroupName",
                 "annotationMode",
                 "color",
                 "description",
