@@ -133,10 +133,6 @@ class Project:
                 labels_data = label_group.get_data()["labels"]
                 for label in labels_data:
                     if label["id"] == label_id:
-                        if class_id == 0 and label["type"].lower() == "local":
-                            raise Exception(
-                                f"{label_id} is a local type, its class id cannot be 0."
-                            )
                         classes_dict[label_id] = {
                             "class_id": class_id,
                             "class_text": label["name"],
