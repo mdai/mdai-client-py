@@ -109,7 +109,7 @@ def json_to_dataframe(json_file, datasets=[]):
         def unpack_dictionary(df, column):
             ret = None
             ret = pd.concat(
-                [df, pd.DataFrame((d for idx, d in df[column].iteritems()))], axis=1, sort=False
+                [df, pd.DataFrame((d for idx, d in df[column].items()))], axis=1, sort=False
             )
             del ret[column]
             return ret
