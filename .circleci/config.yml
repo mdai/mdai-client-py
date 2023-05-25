@@ -74,9 +74,15 @@ workflows:
           filters:
             branches:
               only: master
+          context:
+            - SLACK
+            - PYPI_CREDENTIALS
       - test_and_release_to_pypi:
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/
             branches:
               ignore: /.*/
+          context:
+            - SLACK
+            - PYPI_CREDENTIALS
