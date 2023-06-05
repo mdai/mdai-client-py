@@ -32,10 +32,9 @@ poetry shell
 
 ## Creating a new release
 
-Update the library version in the following files according to [semver](https://semver.org/) guidelines -
+Update the library version in the following files with every PR according to [semver](https://semver.org/) guidelines -
 
 - [pyproject.toml](https://github.com/mdai/mdai-client-py/blob/master/pyproject.toml#L6)
-- [mdai/\_\_init\_\_.py](https://github.com/mdai/mdai-client-py/blob/master/mdai/__init__.py#L3)
 
 Add a new tag -
 
