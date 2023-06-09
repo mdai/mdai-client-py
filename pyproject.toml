@@ -3,7 +3,7 @@ line-length = 100
 
 [tool.poetry]
 name = "mdai"
-version = "0.12.5"
+version = "0.13.0"
 description = "MD.ai Python client library"
 license = "Apache-2.0"
 authors = ["MD.ai <github@md.ai>"]
