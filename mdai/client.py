@@ -2,6 +2,7 @@ import os
 import threading
 import re
 import math
+import json
 import uuid
 import zipfile
 import requests
@@ -40,6 +41,7 @@ class Client:
         self.access_token = access_token
         self.session = requests.Session()
         self._test_endpoint()
+        self.chat_completion = ChatCompletion(self.domain, self.session, self._create_headers())
 
     def project(
         self,
@@ -738,3 +740,38 @@ class AnnotationsImportManager:
         )
         # fire ready threading.Event
         self._ready.set()
+
+
+class ChatCompletion:
+    def __init__(self, domain="public.md.ai",session=None, headers=None):
+        self.domain = domain
+        if session and isinstance(session, requests.Session):
+            self.session = session
+        else:
+            self.session = requests.Session()
+        self.headers = headers
+
+    def create(self, domain, messages, model="gpt-3.5-turbo", temperature=0, top_p=1,
+               n=1, stop=None, max_tokens=2048, presence_penalty=0, frequency_penalty=0, logit_bias=None):
+        """Creates a chat completion API call through MD.ai client.
+        """
+        headers = self.headers
+        headers["Content-Type"] = "application/json"
+        data = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "top_p": top_p,
+            "n": n,
+            "stop": stop,
+            "max_tokens": max_tokens,
+            "presence_penalty": presence_penalty,
+            "frequency_penalty": frequency_penalty,
+            "logit_bias": logit_bias
+        }
+        try:
+            response = self.session.post(f'https://{domain}/api/openai/chat/completions', json=data, headers=headers)
+            response_json = json.loads(response.text)["response"]
+            return response_json
+        except:
+            raise Exception(f"Error Calling Chat Completion API. Please check all the parameters and try again")
