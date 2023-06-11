@@ -1,6 +1,18 @@
 [tool.black]
 line-length = 100
 
+[tool.ruff]
+line-length = 100
+# Enable Pyflakes and pycodestyle rules.
+select = ["E", "F"]
+# E501 is the "Line too long" error. We disable it because we use Black for
+# code formatting. Black makes a best effort to keep lines under the max
+# length, but can go over in some cases.
+# E203: Whitespace before ':'. Conflicts with black formatting.
+# E231: Missing whitespace after ',', ';', or ':'. Conflicts with black formatting.
+# W503: Line break occurred before a binary operator. Conflicts with black formatting.
+ignore = ["E501", "E203", "E231", "W503"]
+
 [tool.poetry]
 name = "mdai"
 version = "0.13.0"
@@ -42,15 +54,15 @@ retrying = "*"
 scikit-image = "*"
 tqdm = "*"
 dicom2nifti = "*"
-PyYAML = "^6.0"
+PyYAML = "*"
 
-[tool.poetry.dev-dependencies]
-black = "==19.10b0"
-flake8 = "*"
+[tool.poetry.group.dev.dependencies]
+black = "23.3.0"
+ruff = "0.0.272"
 pytest = "*"
-sphinx = "^2.2"
-recommonmark = "^0.6.0"
+sphinx = "*"
+recommonmark = "*"
 
 [build-system]
-requires = ["poetry_core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+build-backend = "poetry.masonry.api"

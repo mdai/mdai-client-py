@@ -174,12 +174,15 @@ class Client:
         return None
 
     def load_model_annotations(self):
-        """Deprecated method: use `import_annotations` instead.
-        """
+        """Deprecated method: use `import_annotations` instead."""
         print("Deprecated method: use `import_annotations` instead.")
 
     def import_annotations(
-        self, annotations, project_id, dataset_id, chunk_size=ANNOTATIONS_IMPORT_DEFAULT_CHUNK_SIZE,
+        self,
+        annotations,
+        project_id,
+        dataset_id,
+        chunk_size=ANNOTATIONS_IMPORT_DEFAULT_CHUNK_SIZE,
     ):
         """Import annotations into project.
         For example, this method can be used to load machine learning model results into project as
@@ -245,8 +248,7 @@ class Client:
         return headers
 
     def _test_endpoint(self):
-        """Checks endpoint for validity and authorization.
-        """
+        """Checks endpoint for validity and authorization."""
         test_endpoint = f"https://{self.domain}/api/test"
         r = self.session.get(test_endpoint, headers=self._create_headers())
         if r.status_code == 200:
@@ -261,8 +263,7 @@ class Client:
         stop_max_attempt_number=10,
     )
     def _gql(self, query, variables=None):
-        """Executes GraphQL query.
-        """
+        """Executes GraphQL query."""
         gql_endpoint = f"https://{self.domain}/api/graphql"
         headers = self._create_headers()
         headers["Accept"] = "application/json"
@@ -283,8 +284,7 @@ class Client:
 
 
 class ProjectDataManager:
-    """Manager for project data exports and downloads.
-    """
+    """Manager for project data exports and downloads."""
 
     def __init__(
         self,
@@ -394,8 +394,7 @@ class ProjectDataManager:
         stop_max_attempt_number=10,
     )
     def _check_data_export_job_progress(self):
-        """Poll for data export job progress.
-        """
+        """Poll for data export job progress."""
         endpoint = f"https://{self.domain}/api/data-export/{self.data_type}/progress"
         params = self._get_data_export_params()
         r = self.session.post(endpoint, json=params, headers=self.headers)
@@ -513,8 +512,7 @@ class ProjectDataManager:
             return os.path.join(self.path, dicom_metadata_fp)
 
     def _download_files(self, file_keys):
-        """Downloads exported files.
-        """
+        """Downloads exported files."""
         try:
             for file_key in file_keys:
                 print(f"Downloading file: {file_key}")
@@ -567,8 +565,7 @@ class ProjectDataManager:
 
 
 class AnnotationsImportManager:
-    """Manager for importing annotations.
-    """
+    """Manager for importing annotations."""
 
     def __init__(
         self,
@@ -642,8 +639,7 @@ class AnnotationsImportManager:
         stop_max_attempt_number=10,
     )
     def _check_job_progress(self):
-        """Poll for annotations import job progress.
-        """
+        """Poll for annotations import job progress."""
         endpoint = f"https://{self.domain}/api/data-import/annotations/progress"
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
@@ -743,7 +739,7 @@ class AnnotationsImportManager:
 
 
 class ChatCompletion:
-    def __init__(self, domain="public.md.ai",session=None, headers=None):
+    def __init__(self, domain="public.md.ai", session=None, headers=None):
         self.domain = domain
         if session and isinstance(session, requests.Session):
             self.session = session
@@ -751,10 +747,21 @@ class ChatCompletion:
             self.session = requests.Session()
         self.headers = headers
 
-    def create(self, domain, messages, model="gpt-3.5-turbo", temperature=0, top_p=1,
-               n=1, stop=None, max_tokens=2048, presence_penalty=0, frequency_penalty=0, logit_bias=None):
-        """Creates a chat completion API call through MD.ai client.
-        """
+    def create(
+        self,
+        domain,
+        messages,
+        model="gpt-3.5-turbo",
+        temperature=0,
+        top_p=1,
+        n=1,
+        stop=None,
+        max_tokens=2048,
+        presence_penalty=0,
+        frequency_penalty=0,
+        logit_bias=None,
+    ):
+        """Creates a chat completion API call through MD.ai client."""
         headers = self.headers
         headers["Content-Type"] = "application/json"
         data = {
@@ -767,11 +774,15 @@ class ChatCompletion:
             "max_tokens": max_tokens,
             "presence_penalty": presence_penalty,
             "frequency_penalty": frequency_penalty,
-            "logit_bias": logit_bias
+            "logit_bias": logit_bias,
         }
         try:
-            response = self.session.post(f'https://{domain}/api/openai/chat/completions', json=data, headers=headers)
+            response = self.session.post(
+                f"https://{domain}/api/openai/chat/completions", json=data, headers=headers
+            )
             response_json = json.loads(response.text)["response"]
             return response_json
         except:
-            raise Exception(f"Error Calling Chat Completion API. Please check all the parameters and try again")
+            raise Exception(
+                f"Error Calling Chat Completion API. Please check all the parameters and try again"
+            )
