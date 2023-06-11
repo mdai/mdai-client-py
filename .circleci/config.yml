@@ -6,7 +6,7 @@ orbs:
 common_deploy_setup: &common_deploy_setup
   working_directory: ~/mdai-client-py
   docker:
-    - image: cimg/python:3.7.13
+    - image: cimg/python:3.8.17
 
 step_restore_cache: &step_restore_cache
   restore_cache:
@@ -17,9 +17,10 @@ step_install_dependencies: &step_install_dependencies
   run:
     name: Install dependencies
     command: |
+      pip install -U poetry
       poetry config virtualenvs.create true
       poetry config virtualenvs.in-project true
-      poetry install
+      poetry install --no-ansi
 
 step_save_cache: &step_save_cache
   save_cache:

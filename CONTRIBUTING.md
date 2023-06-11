@@ -2,7 +2,7 @@
 
 ## Python version
 
-[Pyenv](https://github.com/pyenv/pyenv) is recommended for managing python versions. Currently, python 3.7+ is used for development.
+[Pyenv](https://github.com/pyenv/pyenv) is recommended for managing python versions. Currently, python 3.8+ is used for development.
 
 ## Virtualenv
 
@@ -20,7 +20,7 @@ poetry config virtualenvs.in-project true
 poetry install
 ```
 
-VSCode will automatically load the virtualenv. [flake8](http://flake8.pycqa.org) (linting) and [black](https://github.com/ambv/black) (formatter) are installed as dev dependencies.
+VSCode will automatically load the virtualenv. [ruff](https://github.com/charliermarsh/ruff) (linting) and [black](https://github.com/ambv/black) (formatter) are installed as dev dependencies.
 
 To activate the local virtualenv:
 
