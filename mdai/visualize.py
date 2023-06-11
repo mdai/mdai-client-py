@@ -9,7 +9,7 @@ from matplotlib import patches
 
 
 def random_colors(N, bright=True):
-    """ Generate random colors.
+    """Generate random colors.
     To get visually distinct colors, generate them in HSV space then convert to RGB.
 
     Args:
@@ -50,7 +50,7 @@ def display_images(image_ids, titles=None, cols=3, cmap="gray", norm=None, inter
 
 
 def load_dicom_image(image_id, to_RGB=False, rescale=False):
-    """ Load a DICOM image.
+    """Load a DICOM image.
 
     Args:
         image_id (str):
@@ -114,7 +114,6 @@ def load_mask(image_id, dataset):
         class_ids = np.zeros((count,), dtype=np.int32)
 
         for i, a in enumerate(annotations):
-
             label_id = a["labelId"]
             annotation_mode = dataset.label_id_to_class_annotation_mode(label_id)
             # print(annotation_mode)
@@ -157,10 +156,14 @@ def load_mask(image_id, dataset):
                 mask_instance = mask[:, :, i].copy()
                 if a.data["foreground"]:
                     for i in a.data["foreground"]:
-                        mask_instance = cv2.fillPoly(mask_instance, [np.array(i, dtype=np.int32)], (255, 255, 255))
+                        mask_instance = cv2.fillPoly(
+                            mask_instance, [np.array(i, dtype=np.int32)], (255, 255, 255)
+                        )
                 if a.data["background"]:
                     for i in a.data["background"]:
-                        mask_instance = cv2.fillPoly(mask_instance, [np.array(i, dtype=np.int32)], (0,0,0))
+                        mask_instance = cv2.fillPoly(
+                            mask_instance, [np.array(i, dtype=np.int32)], (0, 0, 0)
+                        )
                 mask[:, :, i] = mask_instance
 
             elif annotation_mode is None:
@@ -169,7 +172,7 @@ def load_mask(image_id, dataset):
             # load class id
             class_ids[i] = dataset.label_id_to_class_id(label_id)
 
-    return mask.astype(np.bool), class_ids.astype(np.int32)
+    return mask.astype(bool), class_ids.astype(np.int32)
 
 
 def apply_mask(image, mask, color, alpha=0.3):
