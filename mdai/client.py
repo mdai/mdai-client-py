@@ -529,9 +529,12 @@ class ProjectDataManager:
 
                 # download file
                 # stream response so we can display progress bar
-                params = {"token": dl_token, "sessionId": dl_session_id}
                 url = f"https://{self.domain}/api/data-export/download/{key}"
-                r = requests.get(url, params=params, headers=self.headers, stream=True)
+                data = {"token": dl_token, "sessionId": dl_session_id}
+                r = requests.post(url, json=data, stream=True)
+                # fallback to GET if POST not available
+                if r.status_code == 405:
+                    r = requests.get(url, params=data, stream=True)
 
                 # total size in bytes
                 total_size = int(r.headers.get("content-length", 0))
