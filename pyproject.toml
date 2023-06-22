@@ -15,7 +15,7 @@ ignore = ["E501", "E203", "E231", "W503"]
 
 [tool.poetry]
 name = "mdai"
-version = "0.13.1"
+version = "0.13.2"
 description = "MD.ai Python client library"
 license = "Apache-2.0"
 authors = ["MD.ai <github@md.ai>"]
@@ -65,4 +65,4 @@ recommonmark = "*"
 
 [build-system]
 requires = ["poetry-core"]
-build-backend = "poetry.masonry.api"
+build-backend = "poetry.core.masonry.api"
