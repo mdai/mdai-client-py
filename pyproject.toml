@@ -15,7 +15,7 @@ ignore = ["E501", "E203", "E231", "W503"]
 
 [tool.poetry]
 name = "mdai"
-version = "0.13.2"
+version = "0.13.3"
 description = "MD.ai Python client library"
 license = "Apache-2.0"
 authors = ["MD.ai <github@md.ai>"]
