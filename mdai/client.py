@@ -35,13 +35,15 @@ class Client:
         domain_match = re.match(r"^\w+\.md\.ai$", domain)
         dev_domain_match = re.match(r"^\w+\.mdai.dev(:\d+)?$", domain)
         if not domain_match and not dev_domain_match:
-            raise ValueError(f"domain {domain} is invalid: should be format *.md.ai")
+            raise ValueError(
+                f"domain {domain} is invalid: should be format *.md.ai")
 
         self.domain = domain
         self.access_token = access_token
         self.session = requests.Session()
         self._test_endpoint()
-        self.chat_completion = ChatCompletion(self.domain, self.session, self._create_headers())
+        self.chat_completion = ChatCompletion(
+            self.domain, self.session, self._create_headers())
 
     def project(
         self,
@@ -82,10 +84,12 @@ class Client:
             "extract_images": extract_images,
         }
 
-        annotations_data_manager = ProjectDataManager("annotations", **data_manager_kwargs)
+        annotations_data_manager = ProjectDataManager(
+            "annotations", **data_manager_kwargs)
         annotations_data_manager.create_data_export_job()
         if not annotations_only:
-            images_data_manager = ProjectDataManager("images", **data_manager_kwargs)
+            images_data_manager = ProjectDataManager(
+                "images", **data_manager_kwargs)
             images_data_manager.create_data_export_job()
 
         annotations_data_manager.wait_until_ready()
@@ -129,7 +133,8 @@ class Client:
             "force_download": force_download,
         }
 
-        model_outputs_manager = ProjectDataManager("model-outputs", **data_manager_kwargs)
+        model_outputs_manager = ProjectDataManager(
+            "model-outputs", **data_manager_kwargs)
         model_outputs_manager.create_data_export_job()
         model_outputs_manager.wait_until_ready()
         return None
@@ -168,7 +173,8 @@ class Client:
             "force_download": force_download,
         }
 
-        dicom_metadata_manager = ProjectDataManager("dicom-metadata", **data_manager_kwargs)
+        dicom_metadata_manager = ProjectDataManager(
+            "dicom-metadata", **data_manager_kwargs)
         dicom_metadata_manager.create_data_export_job()
         dicom_metadata_manager.wait_until_ready()
         return None
@@ -204,7 +210,8 @@ class Client:
         num_chunks = math.ceil(len(annotations) / chunk_size)
 
         if num_chunks > 1:
-            print(f"Importing {len(annotations)} total annotations in {num_chunks} chunks...")
+            print(
+                f"Importing {len(annotations)} total annotations in {num_chunks} chunks...")
 
         failed_annotations = []
 
@@ -254,7 +261,8 @@ class Client:
         if r.status_code == 200:
             print(f"Successfully authenticated to {self.domain}.")
         else:
-            raise Exception("Authorization error. Make sure your access token is valid.")
+            raise Exception(
+                "Authorization error. Make sure your access token is valid.")
 
     @retry(
         retry_on_exception=retry_on_http_error,
@@ -464,12 +472,14 @@ class ProjectDataManager:
                 data_path = self._get_data_path(file_keys)
                 if self.force_download or not os.path.exists(data_path):
                     # download in separate thread
-                    t = threading.Thread(target=self._download_files, args=(file_keys,))
+                    t = threading.Thread(
+                        target=self._download_files, args=(file_keys,))
                     t.start()
                 else:
                     # use existing data
                     self.data_path = data_path
-                    print(f"Using cached {self.data_type} data for project {self.project_id}.")
+                    print(
+                        f"Using cached {self.data_type} data for project {self.project_id}.")
                     # fire ready threading.Event
                     self._ready.set()
         except (TypeError, KeyError):
@@ -487,7 +497,8 @@ class ProjectDataManager:
         r = self.session.post(endpoint, json=params, headers=self.headers)
         if r.status_code != 200:
             r.raise_for_status()
-        print(f"Error exporting {self.data_type} for project {self.project_id}.")
+        print(
+            f"Error exporting {self.data_type} for project {self.project_id}.")
         # fire ready threading.Event
         self._ready.set()
 
@@ -559,9 +570,11 @@ class ProjectDataManager:
 
             self.data_path = self._get_data_path(file_keys)
 
-            print(f"Success: {self.data_type} data for project {self.project_id} ready.")
+            print(
+                f"Success: {self.data_type} data for project {self.project_id} ready.")
         except Exception:
-            print(f"Error downloading {self.data_type} data for project {self.project_id}.")
+            print(
+                f"Error downloading {self.data_type} data for project {self.project_id}.")
 
         # fire ready threading.Event
         self._ready.set()
@@ -752,16 +765,17 @@ class ChatCompletion:
 
     def create(
         self,
-        domain,
         messages,
         model="gpt-3.5-turbo",
+        functions=None,
+        function_call=None,
         temperature=0,
-        top_p=1,
+        top_p=None,
         n=1,
         stop=None,
-        max_tokens=2048,
-        presence_penalty=0,
-        frequency_penalty=0,
+        max_tokens=None,
+        presence_penalty=None,
+        frequency_penalty=None,
         logit_bias=None,
     ):
         """Creates a chat completion API call through MD.ai client."""
@@ -770,6 +784,8 @@ class ChatCompletion:
         data = {
             "model": model,
             "messages": messages,
+            "functions": functions,
+            "function_call": function_call,
             "temperature": temperature,
             "top_p": top_p,
             "n": n,
@@ -781,11 +797,14 @@ class ChatCompletion:
         }
         try:
             response = self.session.post(
-                f"https://{domain}/api/openai/chat/completions", json=data, headers=headers
+                f"https://{self.domain}/api/openai/chat/completions", json=data, headers=headers
             )
-            response_json = json.loads(response.text)["response"]
-            return response_json
-        except:
-            raise Exception(
-                f"Error Calling Chat Completion API. Please check all the parameters and try again"
+            response_json = json.loads(response.text)
+            if (response_json.get("error")):
+                raise TypeError(f'{response_json.get("error")}')
+            response_content = response_json["response"]
+            return response_content
+        except Exception as error:
+            print(
+                f"{error}. Error Calling Chat Completion API. Please check all the parameters and try again"
             )
