@@ -752,16 +752,17 @@ class ChatCompletion:
 
     def create(
         self,
-        domain,
         messages,
         model="gpt-3.5-turbo",
+        functions=None,
+        function_call=None,
         temperature=0,
-        top_p=1,
+        top_p=None,
         n=1,
         stop=None,
-        max_tokens=2048,
-        presence_penalty=0,
-        frequency_penalty=0,
+        max_tokens=None,
+        presence_penalty=None,
+        frequency_penalty=None,
         logit_bias=None,
     ):
         """Creates a chat completion API call through MD.ai client."""
@@ -770,6 +771,8 @@ class ChatCompletion:
         data = {
             "model": model,
             "messages": messages,
+            "functions": functions,
+            "function_call": function_call,
             "temperature": temperature,
             "top_p": top_p,
             "n": n,
@@ -781,11 +784,14 @@ class ChatCompletion:
         }
         try:
             response = self.session.post(
-                f"https://{domain}/api/openai/chat/completions", json=data, headers=headers
+                f"https://{self.domain}/api/openai/chat/completions", json=data, headers=headers
             )
-            response_json = json.loads(response.text)["response"]
-            return response_json
-        except:
-            raise Exception(
-                f"Error Calling Chat Completion API. Please check all the parameters and try again"
+            response_json = json.loads(response.text)
+            if response_json.get("error"):
+                raise TypeError(f'{response_json.get("error")}')
+            response_content = response_json["response"]
+            return response_content
+        except Exception as error:
+            print(
+                f"{error}. Error Calling Chat Completion API. Please check all the parameters and try again"
             )
