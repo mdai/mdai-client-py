@@ -16,9 +16,9 @@ import warnings
 warnings.filterwarnings("ignore", module="pydicom")
 
 
-# Imports and Parse Some of the DICOM Standard Fil es
+# Imports and Parse Some of the DICOM Standard Files
 # -----------------------------------------------
-class SR_SEG_Export:
+class DicomExport:
     """
     Used to convert md.ai annotations to DICOM SR/SEG format for easier data processing.
 
@@ -57,10 +57,6 @@ class SR_SEG_Export:
 
         self.dicom_standards_setups()
         self.dicom_tags_setup()
-        if output_format == "SR":
-            self.create_sr_exports()
-        else:
-            self.create_seg_exports()
 
     def dicom_standards_setups(self):
         """
@@ -216,7 +212,7 @@ class SR_SEG_Export:
                 if series_uid in d:
                     d[series_uid].append(sop_uid)
 
-    # Helper functions to place DICOM tags into SR document Template
+    # Helper functions to place DICOM tags into SR/SEG document Template
     # ---------------------------------------------------
     """
   > Iterates through a given sequence of tags from the standard DICOM heirarchy
@@ -316,6 +312,25 @@ class SR_SEG_Export:
                     seq = self.add_to_dataset(seq, keyword, dict_seq[keyword], True)
             sequences.append(seq)
         return sequences
+
+
+class SrExport(DicomExport):
+    def __init__(
+        self,
+        annotation_json,
+        metadata_json,
+        combine_label_groups=True,
+        output_dir=None,
+    ):
+        DicomExport.__init__(
+            self,
+            "SR",
+            annotation_json,
+            metadata_json,
+            combine_label_groups,
+            output_dir,
+        )
+        self.create_sr_exports()
 
     def create_sr_exports(self):
         # Iterate through each study and create SR document for each annotator in each study
@@ -552,6 +567,25 @@ class SR_SEG_Export:
                         f"{os.getcwd()}/{out_dir}/DICOM_SR_{dataset_id}_{study_uid}_annotator_{instance_number}.dcm"
                     )
         print(f"Successfully exported DICOM SR files into {out_dir}")
+
+
+class SegExport(DicomExport):
+    def __init__(
+        self,
+        annotation_json,
+        metadata_json,
+        combine_label_groups=True,
+        output_dir=None,
+    ):
+        DicomExport.__init__(
+            self,
+            "SEG",
+            annotation_json,
+            metadata_json,
+            combine_label_groups,
+            output_dir,
+        )
+        self.create_seg_exports()
 
     # Annotation dataframe has a separate row for a parent label. This function drops that row
     def drop_dupes(self, row):

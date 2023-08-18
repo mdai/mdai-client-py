@@ -10,7 +10,7 @@ from . import preprocess
 from .client import Client
 from .utils import common_utils
 from .utils import transforms
-from .utils import SR_SEG_utils
+from .utils import dicom_utils
 from .inference import delete_env, run_inference, infer
 
 try:
