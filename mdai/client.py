@@ -10,8 +10,8 @@ import urllib3.exceptions
 from retrying import retry
 from tqdm import tqdm
 import arrow
-import pydicom
 from pydicom.filereader import dcmread
+from .utils import dicom_utils
 from .preprocess import Project
 from . import __version__
 
@@ -243,7 +243,7 @@ class Client:
 
         return failed_annotations
 
-    def import_SR(self, file_path, json_out=False, project_id="", dataset_id="", label_id=""):
+    def import_sr(self, file_path, json_out=False, project_id="", dataset_id="", label_id=""):
         """
         Inputs:
             `file_path` - File path to the SR (required)
@@ -267,7 +267,7 @@ class Client:
         content_seq_list = list(ds.ContentSequence)
 
         content = []
-        self.iterate_content_seq(content, content_seq_list)
+        dicom_utils.iterate_content_seq(content, content_seq_list)
 
         final_content = []
         for annot in content:
@@ -302,67 +302,6 @@ class Client:
                 annotations.append(annot_dict)
 
             self.import_annotations(annotations, project_id, dataset_id)
-
-    def iterate_content_seq(self, content, content_seq_list):
-        for content_seq in content_seq_list:
-            parent_labels = []
-            child_labels = []
-            notes = []
-
-            if "RelationshipType" in content_seq:
-                if content_seq.RelationshipType == "HAS ACQ CONTEXT":
-                    continue
-
-            if content_seq.ValueType == "IMAGE":
-                if "ReferencedSOPSequence" in content_seq:
-                    for ref_seq in content_seq.ReferencedSOPSequence:
-                        if "ReferencedSOPClassUID" in ref_seq:
-                            notes.append(
-                                f"\n   Referenced SOP Class UID = {ref_seq.ReferencedSOPClassUID}"
-                            )
-                        if "ReferencedSOPInstanceUID" in ref_seq:
-                            notes.append(
-                                f"\n   Referenced SOP Instance UID = {ref_seq.ReferencedSOPInstanceUID}"
-                            )
-                        if "ReferencedSegmentNumber" in ref_seq:
-                            notes.append(
-                                f"\n   Referenced Segment Number = {ref_seq.ReferencedSegmentNumber}"
-                            )
-                else:
-                    continue
-
-            if "ConceptNameCodeSequence" in content_seq:
-                if len(content_seq.ConceptNameCodeSequence) > 0:
-                    parent_labels.append(content_seq.ConceptNameCodeSequence[0].CodeMeaning)
-            if "ConceptCodeSequence" in content_seq:
-                if len(content_seq.ConceptCodeSequence) > 0:
-                    child_labels.append(content_seq.ConceptCodeSequence[0].CodeMeaning)
-
-            if "DateTime" in content_seq:
-                notes.append(content_seq.DateTime)
-            if "Date" in content_seq:
-                notes.append(content_seq.Date)
-            if "PersonName" in content_seq:
-                notes.append(str(content_seq.PersonName))
-            if "UID" in content_seq:
-                notes.append(content_seq.UID)
-            if "TextValue" in content_seq:
-                child_labels.append(content_seq.TextValue)
-            if "MeasuredValueSequence" in content_seq:
-                if len(content_seq.MeasuredValueSequence) > 0:
-                    units = (
-                        content_seq.MeasuredValueSequence[0]
-                        .MeasurementUnitsCodeSequence[0]
-                        .CodeValue
-                    )
-                    notes.append(str(content_seq.MeasuredValueSequence[0].NumericValue) + units)
-
-            if "ContentSequence" in content_seq:
-                self.iterate_content_seq(content, list(content_seq.ContentSequence))
-            else:
-                content.append(
-                    [", ".join(parent_labels), ", ".join(child_labels), ", ".join(notes)]
-                )
 
     def _create_headers(self):
         headers = {}
