@@ -15,7 +15,7 @@ ignore = ["E501", "E203", "E231", "W503"]
 
 [tool.poetry]
 name = "mdai"
-version = "0.13.3"
+version = "0.14.0"
 description = "MD.ai Python client library"
 license = "Apache-2.0"
 authors = ["MD.ai <github@md.ai>"]
@@ -45,7 +45,7 @@ arrow = "*"
 matplotlib = "*"
 nibabel = "*"
 numpy = "*"
-opencv-python ="*"
+opencv-python = "*"
 pandas = "*"
 pillow = "*"
 pydicom = "*"
