@@ -10,12 +10,11 @@ select = ["E", "F"]
 # length, but can go over in some cases.
 # E203: Whitespace before ':'. Conflicts with black formatting.
 # E231: Missing whitespace after ',', ';', or ':'. Conflicts with black formatting.
-# W503: Line break occurred before a binary operator. Conflicts with black formatting.
-ignore = ["E501", "E203", "E231", "W503"]
+ignore = ["E501", "E203", "E231"]
 
 [tool.poetry]
 name = "mdai"
-version = "0.14.0"
+version = "0.14.1"
 description = "MD.ai Python client library"
 license = "Apache-2.0"
 authors = ["MD.ai <github@md.ai>"]
