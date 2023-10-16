@@ -692,7 +692,6 @@ class AnnotationsImportManager:
             if r.status_code in (400, 401):
                 msg = "Provided IDs are invalid, or you do not have sufficient permissions."
                 print(msg)
-            self._on_job_error()
 
     def wait_until_ready(self):
         self._ready.wait()
@@ -708,14 +707,11 @@ class AnnotationsImportManager:
         endpoint = f"https://{self.domain}/api/data-import/annotations/progress"
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
-        if r.status_code != 200:
-            r.raise_for_status()
 
         try:
             body = r.json()
             status = body["status"]
         except (TypeError, KeyError):
-            self._on_job_error()
             return
 
         if status == "done":
@@ -764,14 +760,11 @@ class AnnotationsImportManager:
         endpoint = f"https://{self.domain}/api/data-import/annotations/done"
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
-        if r.status_code != 200:
-            r.raise_for_status()
 
         try:
             body = r.json()
             self.failed_annotations = body["failed"]
         except (TypeError, KeyError):
-            self._on_job_error()
             return
 
         num_failed = len(self.failed_annotations)
@@ -793,8 +786,6 @@ class AnnotationsImportManager:
         endpoint = f"https://{self.domain}/api/data-import/annotations/error"
         params = {"projectHashId": self.project_id, "jobId": self.job_id}
         r = self.session.post(endpoint, json=params, headers=self.headers)
-        if r.status_code != 200:
-            r.raise_for_status()
         print(
             f"Error importing annotations into project {self.project_id}"
             + f", dataset {self.dataset_id}."
