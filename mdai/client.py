@@ -243,65 +243,49 @@ class Client:
 
         return failed_annotations
 
-    def import_sr(self, file_path, json_out=False, project_id="", dataset_id="", label_id=""):
+    def import_sr(self, sr_files, project_id="", dataset_id="", label_id=""):
         """
         Inputs:
-            `file_path` - File path to the SR (required)
-            `json_out` - Boolean flag to determine if should output to JSON (optional)
+            `sr_files` - List of DICOM-SR files to load
             `project_id` & `dataset_id` & `label_id` - Project information necessary to output SR to annotation note. All must be present if any are present. (optional)
-        Outputs:
-            If `json_out` is `True` then there will be a json file in your cwd called "SR_content".
 
         Created by Dyllan Hofflich and MD.ai
         """
-        ds = dcmread(file_path)
+        if not project_id:
+            raise ValueError('Please add in the "project_id" argument')
+        if not dataset_id:
+            raise ValueError('Please add in the "dataset_id" argument')
+        if not label_id:
+            raise ValueError('Please add in the "label_id" argument')
+        annotations = []
 
-        # Get the referenced Dicom Files
-        referenced_dicoms = []
-        for study_seq in ds.CurrentRequestedProcedureEvidenceSequence:
-            referenced_study = {}
-            study_UID = study_seq.StudyInstanceUID
-            referenced_study["Study UID"] = study_UID
-            referenced_dicoms.append(referenced_study)
+        for file_path in sr_files:
+            ds = dcmread(file_path)
 
-        content_seq_list = list(ds.ContentSequence)
+            # Get the referenced Dicom Files
+            referenced_dicoms = []
+            for study_seq in ds.CurrentRequestedProcedureEvidenceSequence:
+                referenced_study = {}
+                study_UID = study_seq.StudyInstanceUID
+                referenced_study["Study UID"] = study_UID
+                referenced_dicoms.append(referenced_study)
 
-        content = []
-        dicom_utils.iterate_content_seq(content, content_seq_list)
+            content_seq_list = list(ds.ContentSequence)
 
-        final_content = []
-        for annot in content:
-            annot = list(filter(None, annot))
-            final_content.append(" - ".join(annot))
+            content = []
+            dicom_utils.iterate_content_seq(content, content_seq_list)
 
-        if json_out:
-            out_json = {}
-            out_json["Referenced DICOM"] = referenced_dicoms
-            out_json["SR Content"] = final_content
-
-            # Serializing json
-            json_object = json.dumps(out_json, indent=4)
-
-            # Writing to sample.json
-            with open("SR_content.json", "w") as outfile:
-                outfile.write(json_object)
-
-        if project_id or dataset_id or label_id:
-            if not project_id:
-                print('Please add in the "project_id" argument')
-            if not dataset_id:
-                print('Please add in the "dataset_id" argument')
-            if not label_id:
-                print('Please add in the "label_id" argument')
-
-            annotations = []
+            final_content = []
+            for annot in content:
+                annot = list(filter(None, annot))
+                final_content.append(" - ".join(annot))          
             for dicom_dict in referenced_dicoms:
                 study_uid = dicom_dict["Study UID"]
                 note = "\n".join(final_content)
                 annot_dict = {"labelId": label_id, "StudyInstanceUID": study_uid, "note": note}
                 annotations.append(annot_dict)
 
-            self.import_annotations(annotations, project_id, dataset_id)
+        self.import_annotations(annotations, project_id, dataset_id)
 
     def _create_headers(self):
         headers = {}
