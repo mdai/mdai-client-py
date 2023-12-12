@@ -786,6 +786,16 @@ class ChatCompletion:
         else:
             self.session = requests.Session()
         self.headers = headers
+        self.models = {"gpt-3.5-turbo": ['gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-0301'],
+                       "gpt-4": ['gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4-0613', 'gpt-4-0314'],
+                       "llama2": ['meta-llama/Llama-2-70b-chat-hf']}
+
+    def list_models(self, model_name=None):
+        if model_name in self.models.keys():
+            print(f"{model_name} available model list: {self.models[model_name]}")
+        else:
+            for model in self.models.keys():
+                print(f"{model} available model list: {self.models[model]}")
 
     def create(
         self,
