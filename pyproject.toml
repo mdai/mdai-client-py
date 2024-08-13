@@ -14,7 +14,7 @@ ignore = ["E501", "E203", "E231"]
 
 [tool.poetry]
 name = "mdai"
-version = "0.14.3"
+version = "0.15.0"
 description = "MD.ai Python client library"
 license = "Apache-2.0"
 authors = ["MD.ai <github@md.ai>"]
@@ -30,8 +30,10 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
     "Topic :: Software Development :: Libraries",
@@ -40,20 +42,20 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.8"
-arrow = "*"
-matplotlib = "*"
-nibabel = "*"
-numpy = "*"
-opencv-python = "*"
-pandas = "*"
-pillow = "*"
-pydicom = "*"
-requests = "*"
-retrying = "*"
-scikit-image = "*"
-tqdm = "*"
-dicom2nifti = "*"
-PyYAML = "*"
+arrow = "^1.3.0"
+matplotlib = "^3.7.3"
+nibabel = "^5.2.1"
+numpy = "^1.24.0"
+opencv-python = "^4.8.1.78"
+pandas = "^2.0.0"
+pillow = "^10.0.0"
+pydicom = "^2.4.0"
+requests = "^2.32.0"
+retrying = "^1.3.4"
+scikit-image = ">=0.21.0, <1.0.0"
+tqdm = "^4.66.5"
+dicom2nifti = "^2.4.11"
+PyYAML = "^6.0.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "23.3.0"
