@@ -21,9 +21,8 @@ authors = ["MD.ai <github@md.ai>"]
 readme = "README.md"
 homepage = "https://github.com/mdai/mdai-client-py"
 repository = "https://github.com/mdai/mdai-client-py"
-documentation = "https://docs.md.ai/libraries/python/"
+documentation = "https://docs.md.ai/annotator/python/installation/"
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Intended Audience :: Healthcare Industry",
