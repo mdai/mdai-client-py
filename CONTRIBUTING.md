@@ -34,7 +34,7 @@ poetry shell
 
 Update the library version in the following files with every PR according to [semver](https://semver.org/) guidelines -
 
-- [pyproject.toml](https://github.com/mdai/mdai-client-py/blob/master/pyproject.toml#L6)
+- [pyproject.toml](https://github.com/mdai/mdai-client-py/blob/master/pyproject.toml#L17)
 
 Add a new tag -
 
