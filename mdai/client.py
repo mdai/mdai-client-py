@@ -278,7 +278,7 @@ class Client:
             final_content = []
             for annot in content:
                 annot = list(filter(None, annot))
-                final_content.append(" - ".join(annot))          
+                final_content.append(" - ".join(annot))
             for dicom_dict in referenced_dicoms:
                 study_uid = dicom_dict["Study UID"]
                 note = "\n".join(final_content)

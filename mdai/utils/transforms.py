@@ -26,14 +26,14 @@ def apply_slope_intercept(dicom_file):
 
 def remove_padding(array):
     """
-    Removes background/padding from an 8bit numpy array.
+    Removes background/padding (zeros) from an 8bit numpy array.
     """
     arr = array.copy()
     nonzeros = np.nonzero(arr)
     x1 = np.min(nonzeros[0])
-    x2 = np.max(nonzeros[0])
+    x2 = np.max(nonzeros[0]) + 1
     y1 = np.min(nonzeros[1])
-    y2 = np.max(nonzeros[1])
+    y2 = np.max(nonzeros[1]) + 1
     return arr[x1:x2, y1:y2]
 
 
@@ -79,12 +79,13 @@ def rescale_to_8bit(array):
     return array
 
 
-def load_dicom_array(dicom_file, apply_slope_intercept=True):
+def load_dicom_array(dicom_file, apply_rescale=True):
     """
-    Returns the dicom image as a Numpy array.
+    Returns the dicom image as a numpy array.
+    If apply_rescale is True, applies slope and intercept transformation.
     """
     array = dicom_file.pixel_array.copy()
-    if apply_slope_intercept:
+    if apply_rescale:
         array = apply_slope_intercept(dicom_file)
     return array
 

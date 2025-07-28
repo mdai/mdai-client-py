@@ -8,7 +8,7 @@ To get started, check out the examples in the [notebooks section](notebooks), or
 
 ## Installation
 
-Requires Python 3.6+. Install and update using [pip](https://pip.pypa.io/en/stable/quickstart/):
+Requires Python 3.9+. Install and update using [pip](https://pip.pypa.io/en/stable/getting-started/):
 
 ```sh
 pip install --upgrade mdai
@@ -22,10 +22,8 @@ Documentation is available at: https://docs.md.ai/annotator/python/installation/
 
 The MD.ai annotator is a powerful web based application, to store and view anonymized medical images (e.g, DICOM) on the cloud, create annotations collaboratively, in real-time, and export annotations, images and labels for training. The MD.ai python client library can be used to download images and annotations, prepare the datasets, and then used to train and evaluate deep learning models.
 
-- MD.ai Annotator Documentation and Videos: https://docs.md.ai/
+- MD.ai Annotator Documentation and Videos: https://docs.md.ai/annotator/
 - MD.ai Annotator Example Project: https://public.md.ai/annotator/project/aGq4k6NW/workspace
-
-![MD.ai Annotator](https://md.ai/images/product/annotator-feat-dicom.webp)
 
 ## MD.ai Annotation JSON Format
 
@@ -59,12 +57,6 @@ Select the "GITHUB" tab, and add the Lesson 1 URL: https://github.com/mdai/ml-le
 
 To use the GPU, in the notebook menu, go to Runtime -> Change runtime type -> switch to Python 3, and turn on GPU. See more [colab tips.](https://www.kdnuggets.com/2018/02/essential-google-colaboratory-tips-tricks.html)
 
-## Advanced: How to run on Google Cloud Platform with Deep Learning Images
-
-You can also run the notebook with powerful GPUs on the Google Cloud Platform. In this case, you need to authenticate to the Google Cloug Platform, create a private virtual machine instance running a Google's Deep Learning image, and import the lessons. See instructions below.
-
-[GCP Deep Learnings Images How To](running_on_gcp.md)
-
 ---
 
-&copy; 2023 MD.ai, Inc.
+&copy; 2025 MD.ai, Inc.

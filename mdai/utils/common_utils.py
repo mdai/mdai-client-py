@@ -221,11 +221,9 @@ def convert_mask_data(data):
     return output_data
 
 
-"""Converts NIFTI format to DICOM for CT exams. MR to come...
-
 """
-
-
+Converts NIFTI format to DICOM for CT exams. MR to come...
+"""
 def convert_ct(
     input_dir=None,
     output_dir=None,
