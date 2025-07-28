@@ -9,7 +9,7 @@ import numpy as np
 import pydicom
 from pydicom.filereader import dcmread
 from pydicom.dataset import Dataset, FileMetaDataset
-from pydicom.pixel_data_handlers.numpy_handler import pack_bits
+from pydicom.pixel_data_handlers.util import pack_bits
 from pydicom.sequence import Sequence
 import warnings
 
