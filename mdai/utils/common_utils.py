@@ -184,13 +184,11 @@ def convert_mask_annotation_to_array(row):
     """
     Converts a dataframe row containing a mask annotation from our internal complex polygon data representation to a numpy array.
     """
-    mask = np.zeros((int(row.width), int(row.height)))
-    if row.data["foreground"]:
-        for i in row.data["foreground"]:
-            mask = cv2.fillPoly(mask, [np.array(i, dtype=np.int32)], 1)
-    if row.data["background"]:
-        for i in row.data["background"]:
-            mask = cv2.fillPoly(mask, [np.array(i, dtype=np.int32)], 0)
+    mask = np.zeros((int(row.height), int(row.width)))
+    for polygon in row.data.get("foreground") or []:
+        mask = cv2.fillPoly(mask, [np.array(polygon, dtype=np.int32)], 1)
+    for polygon in row.data.get("background") or []:
+        mask = cv2.fillPoly(mask, [np.array(polygon, dtype=np.int32)], 0)
     return mask
 
 
