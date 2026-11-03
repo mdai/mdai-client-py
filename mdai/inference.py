@@ -110,13 +110,15 @@ def run_model(data_path, model_path, model_scope):
 
 def env_exists(env_name):
     """Checks if conda env already exists to prevent duplicate builds"""
+    # Raise rather than return False on errors: a False answer leads to (re)creating the env, and
+    # a failed build removes it.
     try:
         result = subprocess.run(
             ["conda", "env", "list", "--json"], capture_output=True, text=True, check=True
         )
-        envs = json.loads(result.stdout).get("envs", [])
-    except Exception:
-        return False
+    except FileNotFoundError:
+        raise Exception("conda is required for local inference but was not found on PATH.")
+    envs = json.loads(result.stdout).get("envs", [])
     return any(os.path.basename(os.path.normpath(env)) == env_name for env in envs)
 
 
@@ -301,11 +303,15 @@ def _env_python_version(env_name):
     """Returns the major.minor Python version of a conda env"""
     result = _conda_run(
         env_name,
-        ["python", "-c", "import sys; print('%d.%d' % sys.version_info[:2])"],
+        ["python", "-c", "import sys; print('MDAI_PYTHON_VERSION=%d.%d' % sys.version_info[:2])"],
         capture_output=True,
         text=True,
     )
-    return result.stdout.strip().splitlines()[-1]
+    # Activation scripts in the env may print to stdout too.
+    for line in result.stdout.splitlines():
+        if line.startswith("MDAI_PYTHON_VERSION="):
+            return line.split("=", 1)[1].strip()
+    raise Exception(f"Could not determine the Python version of conda env {env_name}.")
 
 
 if __name__ == "__main__":

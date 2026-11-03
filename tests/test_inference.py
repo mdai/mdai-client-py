@@ -84,7 +84,8 @@ elif args[0] == "run":
     if cmd[:4] == ["python", "-m", "pip", "install"]:
         sys.exit(1 if os.environ.get("FAKE_CONDA_FAIL_PIP") else 0)
     if "sys.version_info" in cmd[-1]:
-        print(envs[name])
+        print("output from an activate.d script")
+        print("MDAI_PYTHON_VERSION=" + envs[name])
         sys.exit(0)
     assert cmd[0] == "python"
     sys.exit(subprocess.call([sys.executable] + cmd[1:]))
@@ -193,6 +194,24 @@ def test_run_inference_removes_env_when_build_fails(tmp_path, fake_conda, monkey
 
     assert ["remove", "-n", "mdai_abc123", "--all", "-y"] in fake_conda()
     assert not inference.env_exists("mdai_abc123")
+
+
+def test_env_exists_raises_when_conda_fails(monkeypatch):
+    def fake_run(args, **kwargs):
+        raise subprocess.CalledProcessError(1, args)
+
+    monkeypatch.setattr(inference.subprocess, "run", fake_run)
+    with pytest.raises(subprocess.CalledProcessError):
+        inference.env_exists("mdai_abc123")
+
+
+def test_env_exists_raises_without_conda(monkeypatch):
+    def fake_run(args, **kwargs):
+        raise FileNotFoundError(args[0])
+
+    monkeypatch.setattr(inference.subprocess, "run", fake_run)
+    with pytest.raises(Exception, match="conda is required"):
+        inference.env_exists("mdai_abc123")
 
 
 def test_inference_module_runs_standalone_on_py37():
