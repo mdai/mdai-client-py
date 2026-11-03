@@ -154,16 +154,14 @@ def load_mask(image_id, dataset):
 
             elif annotation_mode == "mask":
                 mask_instance = mask[:, :, i].copy()
-                if a.data["foreground"]:
-                    for i in a.data["foreground"]:
-                        mask_instance = cv2.fillPoly(
-                            mask_instance, [np.array(i, dtype=np.int32)], (255, 255, 255)
-                        )
-                if a.data["background"]:
-                    for i in a.data["background"]:
-                        mask_instance = cv2.fillPoly(
-                            mask_instance, [np.array(i, dtype=np.int32)], (0, 0, 0)
-                        )
+                for polygon in a["data"].get("foreground") or []:
+                    mask_instance = cv2.fillPoly(
+                        mask_instance, [np.array(polygon, dtype=np.int32)], (255, 255, 255)
+                    )
+                for polygon in a["data"].get("background") or []:
+                    mask_instance = cv2.fillPoly(
+                        mask_instance, [np.array(polygon, dtype=np.int32)], (0, 0, 0)
+                    )
                 mask[:, :, i] = mask_instance
 
             elif annotation_mode is None:
