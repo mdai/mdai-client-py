@@ -2,7 +2,6 @@ import os
 import threading
 import re
 import math
-import json
 import uuid
 import zipfile
 import requests
@@ -43,7 +42,13 @@ class Client:
         self.access_token = access_token
         self.session = requests.Session()
         self._test_endpoint()
-        self.chat_completion = ChatCompletion(self.domain, self.session, self._create_headers())
+
+    @property
+    def chat_completion(self):
+        raise AttributeError(
+            "Client.chat_completion has been removed: the MD.ai chat completions API endpoint "
+            "is no longer available."
+        )
 
     def project(
         self,
@@ -776,70 +781,3 @@ class AnnotationsImportManager:
         )
         # fire ready threading.Event
         self._ready.set()
-
-
-class ChatCompletion:
-    def __init__(self, domain="public.md.ai", session=None, headers=None):
-        self.domain = domain
-        if session and isinstance(session, requests.Session):
-            self.session = session
-        else:
-            self.session = requests.Session()
-        self.headers = headers
-        self.models = {"gpt-3.5-turbo": ['gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-0301'],
-                       "gpt-4": ['gpt-4-1106-preview', 'gpt-4-vision-preview', 'gpt-4-0613', 'gpt-4-0314'],
-                       "llama2": ['togethercomputer/llama-2-70b-chat'],
-                       "mixtral": ['mistralai/Mixtral-8x7B-Instruct-v0.1']}
-
-    def list_models(self, model_name=None):
-        if model_name in self.models.keys():
-            print(f"{model_name} available model list: {self.models[model_name]}")
-        else:
-            for model in self.models.keys():
-                print(f"{model} available model list: {self.models[model]}")
-
-    def create(
-        self,
-        messages,
-        model="gpt-3.5-turbo",
-        functions=None,
-        function_call=None,
-        temperature=0,
-        top_p=None,
-        n=1,
-        stop=None,
-        max_tokens=None,
-        presence_penalty=None,
-        frequency_penalty=None,
-        logit_bias=None,
-    ):
-        """Creates a chat completion API call through MD.ai client."""
-        headers = self.headers
-        headers["Content-Type"] = "application/json"
-        data = {
-            "model": model,
-            "messages": messages,
-            "functions": functions,
-            "function_call": function_call,
-            "temperature": temperature,
-            "top_p": top_p,
-            "n": n,
-            "stop": stop,
-            "max_tokens": max_tokens,
-            "presence_penalty": presence_penalty,
-            "frequency_penalty": frequency_penalty,
-            "logit_bias": logit_bias,
-        }
-        try:
-            response = self.session.post(
-                f"https://{self.domain}/api/openai/chat/completions", json=data, headers=headers
-            )
-            response_json = json.loads(response.text)
-            if response_json.get("error"):
-                raise TypeError(f'{response_json.get("error")}')
-            response_content = response_json["response"]
-            return response_content
-        except Exception as error:
-            print(
-                f"{error}. Error Calling Chat Completion API. Please check all the parameters and try again"
-            )
