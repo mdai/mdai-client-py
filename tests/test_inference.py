@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 import stat
@@ -56,7 +57,9 @@ def test_env_exists_matches_exact_name(monkeypatch):
 
 FAKE_CONDA = """\
 #!{python}
-# Minimal conda stand-in: records calls, runs `conda run` commands with the test interpreter.
+# Minimal conda stand-in: records calls and runs `conda run` commands with the test interpreter.
+# Envs are tracked in a JSON file as {{name: python_version}}. Set FAKE_CONDA_FAIL_PIP=1 to make
+# pip installs fail.
 import json, os, subprocess, sys
 
 args = sys.argv[1:]
@@ -64,15 +67,24 @@ with open({log!r}, "a") as f:
     f.write(json.dumps(args) + "\\n")
 
 envs_file = {envs!r}
-envs = json.load(open(envs_file)) if os.path.exists(envs_file) else []
+envs = json.load(open(envs_file)) if os.path.exists(envs_file) else {{}}
 if args[:3] == ["env", "list", "--json"]:
     print(json.dumps({{"envs": ["/fake/envs/" + e for e in envs]}}))
 elif args[0] == "create":
-    envs.append(args[args.index("-n") + 1])
+    python = [a for a in args if a.startswith("python=")][0]
+    envs[args[args.index("-n") + 1]] = python.split("=")[1]
+    json.dump(envs, open(envs_file, "w"))
+elif args[0] == "remove":
+    envs.pop(args[args.index("-n") + 1], None)
     json.dump(envs, open(envs_file, "w"))
 elif args[0] == "run":
+    assert os.environ.get("PYTHONNOUSERSITE") == "1"
+    name = args[args.index("-n") + 1]
     cmd = args[args.index("-n") + 2:]
     if cmd[:4] == ["python", "-m", "pip", "install"]:
+        sys.exit(1 if os.environ.get("FAKE_CONDA_FAIL_PIP") else 0)
+    if "sys.version_info" in cmd[-1]:
+        print(envs[name])
         sys.exit(0)
     assert cmd[0] == "python"
     sys.exit(subprocess.call([sys.executable] + cmd[1:]))
@@ -97,10 +109,13 @@ class MDAIModel:
 """
 
 
-def test_run_inference_end_to_end(tmp_path, monkeypatch):
+@pytest.fixture
+def fake_conda(tmp_path, monkeypatch):
+    """Puts a fake `conda` on PATH. Returns a function that reads the recorded calls."""
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     log = tmp_path / "conda_calls.log"
+    log.write_text("")
     conda = bin_dir / "conda"
     conda.write_text(
         FAKE_CONDA.format(python=sys.executable, log=str(log), envs=str(tmp_path / "envs.json"))
@@ -108,9 +123,18 @@ def test_run_inference_end_to_end(tmp_path, monkeypatch):
     conda.chmod(conda.stat().st_mode | stat.S_IEXEC)
     monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
 
+    def calls():
+        lines = log.read_text().splitlines()
+        log.write_text("")
+        return [json.loads(line) for line in lines]
+
+    return calls
+
+
+def _make_model(tmp_path, version, base_image):
     model_path = tmp_path / "model"
-    version_path = model_path / "source" / "v1"
-    _write_config(version_path, "base_image: py310\n")
+    version_path = model_path / "source" / version
+    _write_config(version_path, f"base_image: {base_image}\n")
     (version_path / "model" / ".mdai" / "mdai_deploy.py").write_text(FAKE_MODEL)
     (version_path / "model" / ".mdai" / "requirements.txt").write_text("")
     (model_path / "model.json").write_text(
@@ -126,29 +150,62 @@ def test_run_inference_end_to_end(tmp_path, monkeypatch):
         )
     )
     data_path = tmp_path / "dicom"
-    data_path.mkdir()
+    data_path.mkdir(exist_ok=True)
     (data_path / "image.dcm").write_bytes(b"not parsed for INSTANCE scope")
+    return str(model_path), str(data_path)
 
-    inference.run_inference(str(model_path), str(data_path), model_version="v1")
 
-    calls = [json.loads(line) for line in log.read_text().splitlines()]
+def test_run_inference_end_to_end(tmp_path, fake_conda):
+    model_path, data_path = _make_model(tmp_path, "v1", "py310")
+
+    inference.run_inference(model_path, data_path, model_version="v1")
+
+    calls = fake_conda()
     assert ["create", "-n", "mdai_abc123", "python=3.10", "pip", "-y"] in calls
     assert any(c[:1] == ["run"] and "-r" in c for c in calls)
 
-    df = pd.read_csv(model_path / "outputs_dicom.csv")
+    df = pd.read_csv(os.path.join(model_path, "outputs_dicom.csv"))
     assert df["Label"].tolist() == ["Finding"]
     assert df["Probability"].tolist() == [0.9]
 
     # Second run reuses the env instead of creating it again.
-    log.write_text("")
-    inference.run_inference(str(model_path), str(data_path), model_version="v1")
-    calls = [json.loads(line) for line in log.read_text().splitlines()]
+    inference.run_inference(model_path, data_path, model_version="v1")
+    calls = fake_conda()
     assert not any(c[0] == "create" for c in calls)
-    assert sum(c[0] == "run" for c in calls) == 1
+    assert not any("pip" in c for c in calls)
 
 
-def test_inference_module_has_no_mdai_imports():
-    # run_inference executes inference.py standalone in the model's env, where mdai isn't installed.
-    source = open(inference.__file__).read()
-    assert "from ." not in source
-    assert "import mdai\n" not in source and "from mdai " not in source
+def test_run_inference_rejects_env_with_other_python(tmp_path, fake_conda):
+    model_path, data_path = _make_model(tmp_path, "v1", "py37")
+    inference.run_inference(model_path, data_path, model_version="v1")
+
+    _make_model(tmp_path, "v2", "py310")
+    with pytest.raises(Exception, match=r"uses Python 3\.7.*needs Python 3\.10.*delete_env"):
+        inference.run_inference(model_path, data_path, model_version="v2")
+
+
+def test_run_inference_removes_env_when_build_fails(tmp_path, fake_conda, monkeypatch):
+    model_path, data_path = _make_model(tmp_path, "v1", "py39")
+    monkeypatch.setenv("FAKE_CONDA_FAIL_PIP", "1")
+
+    with pytest.raises(subprocess.CalledProcessError):
+        inference.run_inference(model_path, data_path, model_version="v1")
+
+    assert ["remove", "-n", "mdai_abc123", "--all", "-y"] in fake_conda()
+    assert not inference.env_exists("mdai_abc123")
+
+
+def test_inference_module_runs_standalone_on_py37():
+    # run_inference executes inference.py standalone in the model's env, which can be Python 3.7
+    # and doesn't have mdai installed.
+    with open(inference.__file__) as f:
+        tree = ast.parse(f.read(), feature_version=(3, 7))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            assert node.level == 0, "relative import"
+            names = [node.module]
+        else:
+            continue
+        assert not any(n == "mdai" or n.startswith("mdai.") for n in names), names

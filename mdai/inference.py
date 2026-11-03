@@ -219,9 +219,9 @@ def run_inference(model_path, data_path, model_version="v1"):
     """
     Run exported MDAI models locally. Returns a csv of model outputs.
 
-    Requires conda. The model runs in a conda env named `mdai_<model id>` with the Python version
-    of the model's `base_image` (py37, py38, py39 or py310). The env is created on the first run
-    and reused afterwards; remove it with `delete_env`.
+    Requires conda 4.9 or later. The model runs in a conda env named `mdai_<model id>` with the
+    Python version of the model's `base_image` (py37, py38, py39 or py310). The env is created on
+    the first run and reused afterwards; remove it with `delete_env`.
 
     Args:
         model_path: Path to the exported and extracted MDAI `model` folder
@@ -248,19 +248,27 @@ def run_inference(model_path, data_path, model_version="v1"):
 
     if env_exists(env_name):
         print(f"Loading conda env {env_name}")
+        env_python_version = _env_python_version(env_name)
+        if env_python_version != python_version:
+            raise Exception(
+                f"Conda env {env_name} uses Python {env_python_version}, but model version "
+                f"{model_version} needs Python {python_version}. Remove the env with "
+                "mdai.delete_env(model_path) and run again."
+            )
     else:
         print(f"Creating conda env {env_name} with Python {python_version}")
         requirements_path = os.path.join(version_path, "model", ".mdai", "requirements.txt")
-        subprocess.run(
-            ["conda", "create", "-n", env_name, f"python={python_version}", "pip", "-y"],
-            check=True,
-        )
         try:
+            subprocess.run(
+                ["conda", "create", "-n", env_name, f"python={python_version}", "pip", "-y"],
+                check=True,
+            )
             _conda_run(env_name, ["python", "-m", "pip", "install", *BASE_REQUIREMENTS])
             if os.path.isfile(requirements_path):
                 _conda_run(env_name, ["python", "-m", "pip", "install", "-r", requirements_path])
-        except subprocess.CalledProcessError:
-            # Don't leave a half-built env behind: it would be reused by the next run.
+        except BaseException:
+            # Don't leave a half-built env behind (also on Ctrl-C): it would be reused by the
+            # next run.
             subprocess.run(["conda", "remove", "-n", env_name, "--all", "-y"])
             raise
 
@@ -278,8 +286,26 @@ def run_inference(model_path, data_path, model_version="v1"):
     )
 
 
-def _conda_run(env_name, args):
-    subprocess.run(["conda", "run", "--no-capture-output", "-n", env_name, *args], check=True)
+def _conda_run(env_name, args, **kwargs):
+    # Keep the user's site-packages (~/.local) for the same Python version out of the env.
+    env = {**os.environ, "PYTHONNOUSERSITE": "1"}
+    return subprocess.run(
+        ["conda", "run", "--no-capture-output", "-n", env_name, *args],
+        check=True,
+        env=env,
+        **kwargs,
+    )
+
+
+def _env_python_version(env_name):
+    """Returns the major.minor Python version of a conda env"""
+    result = _conda_run(
+        env_name,
+        ["python", "-c", "import sys; print('%d.%d' % sys.version_info[:2])"],
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip().splitlines()[-1]
 
 
 if __name__ == "__main__":
