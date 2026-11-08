@@ -36,9 +36,10 @@ def test_get_python_version(tmp_path, base_image, expected):
     assert inference.get_python_version(str(tmp_path)) == expected
 
 
-def test_get_python_version_defaults_to_py37(tmp_path):
-    _write_config(tmp_path, "device_type: cpu\n")
-    assert inference.get_python_version(str(tmp_path)) == "3.7"
+@pytest.mark.parametrize("config", ["device_type: cpu\n", "base_image:\n", ""])
+def test_get_python_version_defaults_to_newest(tmp_path, config):
+    _write_config(tmp_path, config)
+    assert inference.get_python_version(str(tmp_path)) == "3.14"
 
 
 def test_get_python_version_reads_config_yml(tmp_path):

@@ -135,7 +135,9 @@ PYTHON_VERSIONS = {
     "py313": "3.13",
     "py314": "3.14",
 }
-DEFAULT_BASE_IMAGE = "py37"
+# Used when config.yaml does not set base_image, as when building models on MD.ai: the newest
+# version.
+DEFAULT_BASE_IMAGE = list(PYTHON_VERSIONS)[-1]
 
 # Packages installed into the conda env before the model's own requirements.txt, so the model's
 # pins win. They cover what this module needs, plus the DICOM decoders that MD.ai model images
