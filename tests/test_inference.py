@@ -19,16 +19,27 @@ def _write_config(version_path, content, name="config.yaml"):
 
 @pytest.mark.parametrize(
     "base_image, expected",
-    [("py37", "3.7"), ("py38", "3.8"), ("py39", "3.9"), ("py310", "3.10"), ("PY310", "3.10")],
+    [
+        ("py37", "3.7"),
+        ("py38", "3.8"),
+        ("py39", "3.9"),
+        ("py310", "3.10"),
+        ("py311", "3.11"),
+        ("py312", "3.12"),
+        ("py313", "3.13"),
+        ("py314", "3.14"),
+        ("PY310", "3.10"),
+    ],
 )
 def test_get_python_version(tmp_path, base_image, expected):
     _write_config(tmp_path, f"base_image: {base_image}\n")
     assert inference.get_python_version(str(tmp_path)) == expected
 
 
-def test_get_python_version_defaults_to_py37(tmp_path):
-    _write_config(tmp_path, "device_type: cpu\n")
-    assert inference.get_python_version(str(tmp_path)) == "3.7"
+@pytest.mark.parametrize("config", ["device_type: cpu\n", "base_image:\n", ""])
+def test_get_python_version_defaults_to_newest(tmp_path, config):
+    _write_config(tmp_path, config)
+    assert inference.get_python_version(str(tmp_path)) == "3.14"
 
 
 def test_get_python_version_reads_config_yml(tmp_path):
@@ -36,7 +47,7 @@ def test_get_python_version_reads_config_yml(tmp_path):
     assert inference.get_python_version(str(tmp_path)) == "3.9"
 
 
-@pytest.mark.parametrize("base_image", ["nvidia", "custom", "py311"])
+@pytest.mark.parametrize("base_image", ["nvidia", "custom", "py36", "py315"])
 def test_get_python_version_unsupported(tmp_path, base_image):
     _write_config(tmp_path, f"base_image: {base_image}\n")
     with pytest.raises(Exception, match="not supported for local inference"):

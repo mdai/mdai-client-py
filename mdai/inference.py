@@ -122,10 +122,22 @@ def env_exists(env_name):
     return any(os.path.basename(os.path.normpath(env)) == env_name for env in envs)
 
 
-# Python version for each supported `base_image` in the model's .mdai/config.yaml. Mirrors the
-# python base images used when building models on MD.ai.
-PYTHON_VERSIONS = {"py37": "3.7", "py38": "3.8", "py39": "3.9", "py310": "3.10"}
-DEFAULT_BASE_IMAGE = "py37"
+# Python version for each supported `base_image` in the model's .mdai/config.yaml, oldest first.
+# Mirrors the python base images used when building models on MD.ai, plus py37 and py38, which
+# MD.ai no longer builds but older exported models may still use.
+PYTHON_VERSIONS = {
+    "py37": "3.7",
+    "py38": "3.8",
+    "py39": "3.9",
+    "py310": "3.10",
+    "py311": "3.11",
+    "py312": "3.12",
+    "py313": "3.13",
+    "py314": "3.14",
+}
+# Used when config.yaml does not set base_image, as when building models on MD.ai: the newest
+# version.
+DEFAULT_BASE_IMAGE = list(PYTHON_VERSIONS)[-1]
 
 # Packages installed into the conda env before the model's own requirements.txt, so the model's
 # pins win. They cover what this module needs, plus the DICOM decoders that MD.ai model images
@@ -222,7 +234,7 @@ def run_inference(model_path, data_path, model_version="v1"):
     Run exported MDAI models locally. Returns a csv of model outputs.
 
     Requires conda 4.9 or later. The model runs in a conda env named `mdai_<model id>` with the
-    Python version of the model's `base_image` (py37, py38, py39 or py310). The env is created on
+    Python version of the model's `base_image` (py37 through py314). The env is created on
     the first run and reused afterwards; remove it with `delete_env`.
 
     Args:
